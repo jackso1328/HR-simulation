@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR COMMAND - NovaTech Workforce Simulation</title>
+    <link rel="stylesheet" href="./css/style.css">
+    <!-- No external font CDN: works fully offline. System font stack: Inter → Segoe UI → Roboto → Arial -->
+</head>
+<body>
+
+    <!-- Intro Screen -->
+    <div id="intro-screen" class="screen active">
+        <div class="intro-content">
+            <h1 class="logo">NOVATECH AI</h1>
+            <div id="intro-notification" class="hidden">
+                <div class="alert-box">
+                    <h2>🚨 NEW CLIENT PROJECT</h2>
+                    <h3>AI-POWERED MEDICAL IMAGING SYSTEM</h3>
+                    <p>Deadline: 6 Months</p>
+                </div>
+            </div>
+            <div id="intro-role" class="hidden">
+                <h2>YOU ARE THE HR TEAM.</h2>
+                <div class="actions">
+                    <button id="btn-start-simulation" class="btn primary">START SIMULATION</button>
+                </div>
+            </div>
+            <button id="btn-skip-intro" class="btn secondary small abs-bottom-right">SKIP INTRO</button>
+        </div>
+    </div>
+
+    <!-- App Screen -->
+    <div id="app-screen" class="screen hidden">
+        <!-- Top Bar -->
+        <header id="top-bar">
+            <div class="stat-box">
+                <div class="label">PROJECT</div>
+                <div class="value">AI Medical Imaging</div>
+            </div>
+            <div class="stat-box">
+                <div class="label">TIME</div>
+                <div class="value" id="top-time">6 Months</div>
+            </div>
+            <div class="stat-box">
+                <div class="label">BUDGET</div>
+                <div class="value" id="top-budget">₹10,00,000</div>
+            </div>
+            <div class="stat-box">
+                <div class="label">WORKFORCE STATUS</div>
+                <div class="value" id="top-workforce">16 / 21 positions</div>
+            </div>
+            <button id="btn-classroom-mode" class="btn secondary small outline">CLASSROOM MODE</button>
+        </header>
+
+        <!-- Main Panel -->
+        <main id="main-panel">
+            <div id="dynamic-content">
+                <!-- Content gets injected here by ui.js -->
+            </div>
+        </main>
+
+        <!-- Terminal -->
+        <footer id="terminal">
+            <div id="terminal-output"></div>
+            <div class="terminal-input-row">
+                <span class="prompt">&gt;</span>
+                <input type="text" id="command-input" placeholder="Type a command (e.g., 'help')..." autocomplete="off" spellcheck="false">
+            </div>
+        </footer>
+    </div>
+
+    <!-- Overlay / Modals -->
+    <div id="modal-overlay" class="hidden">
+        <div id="modal-content"></div>
+        <button id="btn-close-modal" class="btn secondary">CLOSE</button>
+    </div>
+
+    <script src="./js/data.js"></script>
+    <script src="./js/state.js"></script>
+    <script src="./js/animations.js"></script>
+    <script src="./js/simulation.js"></script>
+    <script src="./js/ui.js"></script>
+    <script src="./js/commands.js"></script>
+    <script src="./js/app.js"></script>
+</body>
+</html>
