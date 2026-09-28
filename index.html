@@ -3,92 +3,202 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HR COMMAND - NovaTech Workforce Simulation</title>
+    <title>NOVA HR COMMAND — Workforce Strategy Simulator</title>
+    <meta name="description" content="An interactive HR strategy simulator for college Business Intelligence seminars. Play as HR Manager of NovaTech and solve real workforce challenges.">
     <link rel="stylesheet" href="./css/style.css">
-    <!-- No external font CDN: works fully offline. System font stack: Inter → Segoe UI → Roboto → Arial -->
+    <!-- Google Fonts via preconnect for performance, with system fallback -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <!-- Intro Screen -->
-    <div id="intro-screen" class="screen active">
-        <div class="intro-content">
-            <h1 class="logo">NOVATECH AI</h1>
-            <div id="intro-notification" class="hidden">
-                <div class="alert-box">
-                    <h2>🚨 NEW CLIENT PROJECT</h2>
-                    <h3>AI-POWERED MEDICAL IMAGING SYSTEM</h3>
-                    <p>Deadline: 6 Months</p>
+<!-- ═══════════════════════════════════════════
+     INTRO SCREEN
+═══════════════════════════════════════════ -->
+<div id="intro-screen" class="screen active">
+    <div class="intro-bg"></div>
+    <div class="intro-content">
+        <div id="intro-logo" class="intro-logo hidden">
+            <div class="logo-badge">NOVA</div>
+            <div class="logo-text">HR <span>COMMAND</span></div>
+            <div class="logo-sub">Workforce Strategy Simulator</div>
+        </div>
+
+        <div id="intro-scenario-picker" class="hidden">
+            <h2 class="intro-pick-title">Choose Your Scenario</h2>
+            <p class="intro-pick-sub">Each scenario presents a unique HR challenge. Different strategies work better in different contexts.</p>
+            <div class="scenario-grid" id="scenario-grid"></div>
+            <div class="intro-difficulty">
+                <span class="intro-pick-label">Difficulty:</span>
+                <div class="diff-btns">
+                    <button class="diff-btn active" data-diff="beginner">BEGINNER</button>
+                    <button class="diff-btn" data-diff="manager">MANAGER</button>
+                    <button class="diff-btn" data-diff="chro">CHIEF HR OFFICER</button>
                 </div>
             </div>
-            <div id="intro-role" class="hidden">
-                <h2>YOU ARE THE HR TEAM.</h2>
-                <div class="actions">
-                    <button id="btn-start-simulation" class="btn primary">START SIMULATION</button>
-                </div>
+            <div class="intro-actions">
+                <button id="btn-start-simulation" class="btn-hero">ENTER HR COMMAND →</button>
+                <button id="btn-random-scenario" class="btn-secondary-outline">🎲 RANDOM SCENARIO</button>
             </div>
-            <button id="btn-skip-intro" class="btn secondary small abs-bottom-right">SKIP INTRO</button>
+        </div>
+
+        <div id="intro-journey" class="hidden">
+            <h3 class="journey-title">MY HR JOURNEY</h3>
+            <div id="journey-stats" class="journey-stats"></div>
         </div>
     </div>
+    <button id="btn-skip-intro" class="skip-btn">SKIP ↓</button>
+</div>
 
-    <!-- App Screen -->
-    <div id="app-screen" class="screen hidden">
-        <!-- Top Bar -->
+<!-- ═══════════════════════════════════════════
+     APP SCREEN
+═══════════════════════════════════════════ -->
+<div id="app-screen" class="screen hidden">
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar">
+        <div class="sidebar-brand">
+            <div class="sidebar-logo">NOVA</div>
+            <div class="sidebar-brand-text">HR COMMAND</div>
+        </div>
+        <nav class="sidebar-nav" id="sidebar-nav">
+            <a href="#" class="nav-item" data-phase="1" id="nav-1">
+                <span class="nav-icon">📋</span>
+                <span class="nav-label">Business Demand</span>
+            </a>
+            <a href="#" class="nav-item" data-phase="2" id="nav-2">
+                <span class="nav-icon">📊</span>
+                <span class="nav-label">Workforce Planning</span>
+            </a>
+            <a href="#" class="nav-item" data-phase="3" id="nav-3">
+                <span class="nav-icon">🔍</span>
+                <span class="nav-label">Talent Intelligence</span>
+            </a>
+            <a href="#" class="nav-item" data-phase="4" id="nav-4">
+                <span class="nav-icon">🎯</span>
+                <span class="nav-label">HR Strategy</span>
+            </a>
+            <a href="#" class="nav-item" data-phase="5" id="nav-5">
+                <span class="nav-icon">🌐</span>
+                <span class="nav-label">Recruitment</span>
+            </a>
+            <a href="#" class="nav-item" data-phase="6" id="nav-6">
+                <span class="nav-icon">👥</span>
+                <span class="nav-label">Selection</span>
+            </a>
+            <a href="#" class="nav-item" data-phase="7" id="nav-7">
+                <span class="nav-icon">🎓</span>
+                <span class="nav-label">Training &amp; Dev</span>
+            </a>
+            <a href="#" class="nav-item" data-phase="8" id="nav-8">
+                <span class="nav-icon">⚡</span>
+                <span class="nav-label">HR Events</span>
+            </a>
+            <a href="#" class="nav-item" data-phase="9" id="nav-9">
+                <span class="nav-icon">📈</span>
+                <span class="nav-label">Final Report</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <button id="btn-classroom-mode" class="sidebar-action-btn">🎓 Classroom Mode</button>
+            <button id="btn-toggle-terminal" class="sidebar-action-btn">💻 Terminal</button>
+            <button id="btn-reset" class="sidebar-action-btn danger">↩ Restart</button>
+        </div>
+    </aside>
+
+    <!-- MAIN AREA -->
+    <div class="app-main" id="app-main">
+
+        <!-- TOP BAR -->
         <header id="top-bar">
-            <div class="stat-box">
-                <div class="label">PROJECT</div>
-                <div class="value">AI Medical Imaging</div>
+            <div class="topbar-left">
+                <button id="btn-sidebar-toggle" class="sidebar-toggle-btn" aria-label="Toggle Sidebar">☰</button>
+                <div id="scenario-badge" class="scenario-badge"></div>
+                <div id="phase-label" class="phase-label">Phase 1 — Business Demand</div>
             </div>
-            <div class="stat-box">
-                <div class="label">TIME</div>
-                <div class="value" id="top-time">6 Months</div>
-            </div>
-            <div class="stat-box">
-                <div class="label">BUDGET</div>
-                <div class="value" id="top-budget">₹10,00,000</div>
-            </div>
-            <div class="stat-box">
-                <div class="label">WORKFORCE STATUS</div>
-                <div class="value" id="top-workforce">16 / 21 positions</div>
-            </div>
-            <div class="stat-box">
-                <div class="label">MORALE</div>
-                <div class="value" id="top-morale">85%</div>
-            </div>
-            <div style="display:flex; gap:10px;">
-                <button id="btn-toggle-terminal" class="btn secondary small outline">💻 TERMINAL</button>
-                <button id="btn-classroom-mode" class="btn secondary small outline">CLASSROOM MODE</button>
+            <div class="topbar-kpis">
+                <div class="kpi-pill" id="kpi-budget">
+                    <span class="kpi-icon">💰</span>
+                    <span class="kpi-label">Budget</span>
+                    <span class="kpi-val" id="kpi-budget-val">₹10,00,000</span>
+                </div>
+                <div class="kpi-pill" id="kpi-time">
+                    <span class="kpi-icon">⏱</span>
+                    <span class="kpi-label">Time</span>
+                    <span class="kpi-val" id="kpi-time-val">6 Months</span>
+                </div>
+                <div class="kpi-pill" id="kpi-morale">
+                    <span class="kpi-icon">💚</span>
+                    <span class="kpi-label">Morale</span>
+                    <span class="kpi-val" id="kpi-morale-val">85%</span>
+                </div>
+                <div class="kpi-pill" id="kpi-readiness">
+                    <span class="kpi-icon">🎯</span>
+                    <span class="kpi-label">Readiness</span>
+                    <span class="kpi-val" id="kpi-readiness-val">0%</span>
+                </div>
             </div>
         </header>
 
-        <!-- Main Panel -->
+        <!-- TIMELINE BAR -->
+        <div id="timeline-bar">
+            <div class="timeline-track" id="timeline-track"></div>
+        </div>
+
+        <!-- MAIN CONTENT -->
         <main id="main-panel">
-            <div id="dynamic-content">
-                <!-- Content gets injected here by ui.js -->
-            </div>
+            <div id="dynamic-content"></div>
         </main>
 
-        <!-- Terminal -->
-        <footer id="terminal">
+        <!-- OBJECTIVE BAR -->
+        <div id="objective-bar">
+            <span class="obj-label">CURRENT OBJECTIVE</span>
+            <span id="objective-text">Review the incoming business demand and understand what NovaTech needs.</span>
+        </div>
+
+        <!-- TERMINAL (hidden by default) -->
+        <footer id="terminal" class="hidden">
+            <div class="terminal-header">
+                <span class="terminal-title">⚡ ADVANCED COMMAND MODE</span>
+                <span class="terminal-hint">Type <strong>help</strong> for commands</span>
+            </div>
             <div id="terminal-output"></div>
             <div class="terminal-input-row">
                 <span class="prompt">&gt;</span>
-                <input type="text" id="command-input" placeholder="Type a command (e.g., 'help')..." autocomplete="off" spellcheck="false">
+                <input type="text" id="command-input" placeholder="enter command..." autocomplete="off" spellcheck="false">
             </div>
         </footer>
     </div>
 
-    <!-- Overlay / Modals -->
-    <div id="modal-overlay" class="hidden">
-        <div id="modal-content"></div>
-        <button id="btn-close-modal" class="btn secondary">CLOSE</button>
-    </div>
+    <!-- RIGHT SCORECARD PANEL (desktop only) -->
+    <aside id="scorecard-panel">
+        <div class="scorecard-title">LIVE SCORECARD</div>
+        <div class="scorecard-items" id="scorecard-items"></div>
+        <div class="event-feed-title">EVENT LOG</div>
+        <div class="event-feed" id="event-feed"></div>
+    </aside>
+</div>
 
-    <script src="./js/data.js"></script>
-    <script src="./js/state.js"></script>
-    <script src="./js/animations.js"></script>
-    <script src="./js/simulation.js"></script>
-    <script src="./js/ui.js"></script>
-    <script src="./js/commands.js"></script>
-    <script src="./js/app.js"></script>
+<!-- MODAL OVERLAY -->
+<div id="modal-overlay" class="hidden">
+    <div id="modal-box">
+        <button id="btn-close-modal" class="modal-close">✕</button>
+        <div id="modal-content"></div>
+    </div>
+</div>
+
+<!-- NOTIFICATION TOAST -->
+<div id="toast-container"></div>
+
+<!-- SCRIPTS (order matters) -->
+<script src="./js/scenarios.js"></script>
+<script src="./js/state.js"></script>
+<script src="./js/engine.js"></script>
+<script src="./js/events.js"></script>
+<script src="./js/ui.js"></script>
+<script src="./js/charts.js"></script>
+<script src="./js/terminal.js"></script>
+<script src="./js/app.js"></script>
 </body>
 </html>

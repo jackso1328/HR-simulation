@@ -1,743 +1,1015 @@
+/* ═══════════════════════════════════════════════════════════
+   UI.JS — All rendering logic
+   Renders each phase, updates KPIs, nav, scorecard.
+   Does NOT contain simulation logic.
+═══════════════════════════════════════════════════════════ */
 window.HRUI = {
-    printToTerminal: function(msg, type) {
-        type = type || "normal";
-        var out = document.getElementById("terminal-output");
-        if (!out) return;
-        var line = document.createElement("div");
-        line.className = "terminal-line " + type;
-        line.innerText = msg;
-        out.appendChild(line);
-        out.scrollTop = out.scrollHeight;
-    },
 
-    updateTopBar: function() {
-        var state = window.HRState;
-        var budgetEl = document.getElementById("top-budget");
-        var timeEl   = document.getElementById("top-time");
-        var wfEl     = document.getElementById("top-workforce");
-        var moraleEl = document.getElementById("top-morale");
-        if (!budgetEl || !timeEl || !wfEl) return;
-
-        budgetEl.innerText = "\u20B9" + state.budget.toLocaleString('en-IN');
-        timeEl.innerText   = state.currentDeadlineMonths + " Months";
-        
-        if (moraleEl) {
-            moraleEl.innerText = state.morale + "%";
-            moraleEl.style.color = state.morale >= 80 ? 'var(--success)' : state.morale >= 50 ? 'var(--warning)' : 'var(--danger)';
-        }
-
-        var totalReq   = state.required.ai  + state.required.ml  + state.required.data;
-        var totalAvail = state.available.ai + state.available.ml + state.available.data;
-        wfEl.innerText = totalAvail + " / " + totalReq + " positions";
-    },
-
-    renderCurrentStage: function() {
-        var state     = window.HRState;
-        var container = document.getElementById("dynamic-content");
-        if (!container) return;
-        container.innerHTML = "";
-
-        if      (state.stage === 2)  this.renderStage2(container);
-        else if (state.stage === 4)  this.renderStage4(container);
-        else if (state.stage === 5)  this.renderStage5(container);
-        else if (state.stage === 7)  this.renderStage7(container);
-        else if (state.stage === 8)  this.renderStage8(container);
-        else if (state.stage === 9)  this.renderStage9(container);
-        else if (state.stage === 10) this.renderStage10(container);
-    },
-
-    // -------------------------------------------------------
-    // Stage 2 — Workforce Analysis
-    // -------------------------------------------------------
-    renderStage2: function(container) {
-        var s   = window.HRState;
-        var gap = window.HRSim.calculateGap();
-
-        var html = '<div class="panel">' +
-            '<div class="panel-header">REQUIRED VS AVAILABLE</div>' +
-            '<div class="grid-3 text-center">' +
-              '<div>' +
-                '<h3>AI Engineers</h3>' +
-                '<div class="workforce-stats">' +
-                  '<div class="stat-circle"><span class="label">REQ</span><span class="num">' + s.required.ai + '</span></div>' +
-                  '<div class="stat-circle"><span class="label">AVAIL</span><span class="num">' + s.available.ai + '</span></div>' +
-                '</div>' +
-              '</div>' +
-              '<div>' +
-                '<h3>ML Engineers</h3>' +
-                '<div class="workforce-stats">' +
-                  '<div class="stat-circle"><span class="label">REQ</span><span class="num">' + s.required.ml + '</span></div>' +
-                  '<div class="stat-circle"><span class="label">AVAIL</span><span class="num">' + s.available.ml + '</span></div>' +
-                '</div>' +
-              '</div>' +
-              '<div>' +
-                '<h3>Data Engineers</h3>' +
-                '<div class="workforce-stats">' +
-                  '<div class="stat-circle"><span class="label">REQ</span><span class="num">' + s.required.data + '</span></div>' +
-                  '<div class="stat-circle"><span class="label">AVAIL</span><span class="num">' + s.available.data + '</span></div>' +
-                '</div>' +
-              '</div>' +
-            '</div>' +
-          '</div>';
-
-        if (!s.workforceAnalyzed) {
-            html += '<div class="action-prompt text-center">' +
-                '<button class="btn primary" onclick="window.HRSim.analyzeWorkforce()">ANALYZE WORKFORCE</button>' +
-                '<p style="margin-top:10px; color:var(--text-muted); font-size:0.9rem">Or type <strong>analyze workforce</strong> in the terminal below.</p>' +
-              '</div>';
-            container.innerHTML = html;
-            return;
-        }
-
-        var totalShortage = Math.max(0, gap.ai) + Math.max(0, gap.ml);
-
-        html += '<div class="panel anim-fade-in" style="border-color: var(--danger)">' +
-            '<h2 class="text-danger text-center">WORKFORCE SHORTAGE DETECTED</h2>' +
-            '<div class="grid-3 text-center" style="margin-top:1rem">' +
-              '<div><h4>AI Engineer</h4><p class="text-danger">Shortage: ' + gap.ai + '</p></div>' +
-              '<div><h4>ML Engineer</h4><p class="text-danger">Shortage: ' + gap.ml + '</p></div>' +
-              '<div><h4>Data Engineer</h4><p class="text-success">Surplus: ' + Math.abs(gap.data) + '</p></div>' +
-            '</div>' +
-            '<p class="text-center" style="margin-top:1rem; font-size:1.1rem; color:var(--warning)">' +
-              'Total shortage: <strong>' + totalShortage + ' positions</strong>' +
-            '</p>' +
-            '<p class="text-center text-muted" style="margin-top:1rem">' +
-              '<em>"Human Resource Planning begins by comparing the workforce required by the organization with the workforce currently available."</em>' +
-            '</p>' +
-          '</div>' +
-          '<div class="action-prompt text-center anim-fade-in">' +
-            '<h3>HR DECISION REQUIRED</h3>' +
-            '<p>How should HR respond to the workforce shortage?</p>' +
-            '<div class="flex-center gap-1" style="gap:1rem; margin-top:1rem; flex-wrap:wrap">' +
-              '<button class="btn secondary" onclick="window.HRSim.choosePlan(\'recruit\')">RECRUIT</button>' +
-              '<button class="btn secondary" onclick="window.HRSim.choosePlan(\'train\')">TRAIN / UPSKILL</button>' +
-              '<button class="btn secondary" onclick="window.HRSim.choosePlan(\'combination\')">COMBINATION</button>' +
-            '</div>' +
-          '</div>';
-
-        container.innerHTML = html;
-    },
-
-    // -------------------------------------------------------
-    // Stage 4 — Employee Database & Training
-    // -------------------------------------------------------
-    renderStage4: function(container) {
-        var s = window.HRState;
-        var trainedCount = s.trainedEmployees.length;
-
-        var html = '<div class="panel">' +
-            '<div class="panel-header">INTERNAL EMPLOYEE DATABASE</div>' +
-            '<div class="grid-2" id="employee-grid"></div>' +
-          '</div>' +
-          '<div class="action-prompt text-center" id="training-prompt">' +
-            '<h3>CLOUD UPSKILLING PROGRAM</h3>' +
-            '<p>Training Cost: \u20B930,000 per employee. Max: 2 employees. Trained so far: <span id="trained-count">' + trainedCount + '</span> / 2</p>' +
-            '<p class="text-muted" style="margin-top:5px">Type <span class="text-primary">find skill gaps</span> to highlight candidates, then click an employee to train.</p>' +
-            '<button class="btn primary" onclick="window.HRCommands.execute(\'show recruitment options\')" style="margin-top:15px">PROCEED TO RECRUITMENT &#8250;</button>' +
-          '</div>';
-
-        container.innerHTML = html;
-
-        var grid = document.getElementById("employee-grid");
-        s.employees.forEach(function(emp) {
-            var div = document.createElement("div");
-            div.innerHTML = window.HRUI.createEmployeeCard(emp);
-            grid.appendChild(div.firstElementChild);
-        });
-
-        // Animate skill bars after DOM settles
-        setTimeout(function() {
-            var fills = document.querySelectorAll("#employee-grid .skill-fill[data-val]");
-            fills.forEach(function(el) {
-                el.style.width = el.getAttribute("data-val") + "%";
-            });
-        }, 80);
-    },
-
-    createEmployeeCard: function(emp) {
-        var trained = window.HRState.trainedEmployees.includes(emp.id);
-        var borderStyle = trained ? "border-color: var(--success); box-shadow: 0 0 8px rgba(16,185,129,0.4);" : "";
-        var badge = trained ? '<div style="text-align:center; color:var(--success); font-size:0.8rem; font-weight:bold; margin-top:8px;">\u2713 TRAINED</div>' : "";
-
-        return '<div class="card" id="emp-card-' + emp.id + '" style="' + borderStyle + '" onclick="window.HRUI.showEmployeeModal(\'' + emp.id + '\')">' +
-            '<h4>' + emp.name + ' <span class="text-muted" style="font-size:0.8rem">(' + emp.id + ')</span></h4>' +
-            '<p class="text-primary" style="font-size:0.9rem">' + emp.role + ' | ' + emp.experience + ' yrs</p>' +
-            '<div class="skill-bar-container">' +
-              '<span class="skill-label">Python</span>' +
-              '<div class="skill-track"><div class="skill-fill" data-val="' + emp.python + '"></div></div>' +
-              '<span class="skill-val">' + emp.python + '</span>' +
-            '</div>' +
-            '<div class="skill-bar-container">' +
-              '<span class="skill-label">Mach. Learning</span>' +
-              '<div class="skill-track"><div class="skill-fill" data-val="' + emp.ml + '"></div></div>' +
-              '<span class="skill-val">' + emp.ml + '</span>' +
-            '</div>' +
-            '<div class="skill-bar-container">' +
-              '<span class="skill-label">Cloud</span>' +
-              '<div class="skill-track"><div class="skill-fill" id="cloud-fill-' + emp.id + '" data-val="' + emp.cloud + '"></div></div>' +
-              '<span class="skill-val" id="cloud-val-' + emp.id + '">' + emp.cloud + '</span>' +
-            '</div>' +
-            '<div class="skill-bar-container">' +
-              '<span class="skill-label">AI</span>' +
-              '<div class="skill-track"><div class="skill-fill" data-val="' + emp.ai + '"></div></div>' +
-              '<span class="skill-val">' + emp.ai + '</span>' +
-            '</div>' +
-            badge +
-          '</div>';
-    },
-
-    renderSkillGaps: function() {
-        var candidates = window.HRSim.getTrainableEmployees();
-        this.printToTerminal("Skill gap analysis complete:", "success");
-        this.printToTerminal("Employees with strong Python & ML but LOW Cloud (\u003c60) — upskilling recommended:", "success");
-        candidates.forEach(function(c) {
-            window.HRUI.printToTerminal("  \u2192 " + c.name + " (" + c.id + ") — Cloud: " + c.cloud, "warning");
-        });
-
-        // Highlight cloud bars in yellow
-        candidates.forEach(function(c) {
-            var el = document.getElementById("cloud-fill-" + c.id);
-            if (el) el.style.background = "var(--warning)";
-        });
-    },
-
-    renderTrainingAnimation: function(res) {
-        var modal = document.getElementById("modal-content");
-        modal.innerHTML =
-            '<h2 class="text-primary text-center">TRAINING PROGRAM STARTING...</h2>' +
-            '<h3 class="text-center">' + res.emp.name + ' (' + res.emp.id + ')</h3>' +
-            '<div style="margin:2rem 0; font-family:monospace; font-size:1.1rem; text-align:center" id="training-modules"></div>' +
-            '<div class="skill-bar-container" style="margin-top:2rem">' +
-              '<span class="skill-label">Cloud Skill</span>' +
-              '<div class="skill-track" style="flex:1"><div class="skill-fill" style="width:' + res.oldCloud + '%; background:var(--success); transition: width 1.2s ease-out;" id="training-skill-bar"></div></div>' +
-              '<span class="skill-val" id="training-skill-val">' + res.oldCloud + '</span>' +
-            '</div>';
-
-        document.getElementById("modal-overlay").classList.remove("hidden");
-
-        var modules = [
-            "Module 1: Cloud Fundamentals",
-            "Module 2: Cloud Architecture",
-            "Module 3: Deployment",
-            "Module 4: Cloud Security"
-        ];
-        var modEl = document.getElementById("training-modules");
-        var i = 0;
-
-        var interval = setInterval(function() {
-            if (i < modules.length) {
-                var d = document.createElement("div");
-                d.innerText = modules[i];
-                modEl.appendChild(d);
-                i++;
-            } else {
-                clearInterval(interval);
-
-                var done = document.createElement("div");
-                done.className = "text-success";
-                done.style.marginTop = "1rem";
-                done.style.fontWeight = "bold";
-                done.innerText = "\u2713 TRAINING COMPLETED";
-                modEl.appendChild(done);
-
-                // Show before/after summary
-                var summary = document.createElement("div");
-                summary.style.marginTop = "1rem";
-                summary.innerHTML =
-                    '<p>Before: <span class="text-danger">' + res.oldCloud + '</span> &rarr; After: <span class="text-success">' + res.newCloud + '</span></p>';
-                modEl.appendChild(summary);
-
-                setTimeout(function() {
-                    // Animate modal bar
-                    var bar = document.getElementById("training-skill-bar");
-                    if (bar) bar.style.width = res.newCloud + "%";
-                    window.HRAnim.animateValue(document.getElementById("training-skill-val"), res.oldCloud, res.newCloud, 1200);
-
-                    // Also update the employee card bars in background (if visible)
-                    var mainBar = document.getElementById("cloud-fill-" + res.emp.id);
-                    if (mainBar) {
-                        mainBar.style.background = "var(--success)";
-                        mainBar.setAttribute("data-val", res.newCloud);
-                        mainBar.style.width = res.newCloud + "%";
-                    }
-                    var mainVal = document.getElementById("cloud-val-" + res.emp.id);
-                    if (mainVal) mainVal.innerText = res.newCloud;
-
-                    // Update trained count label if visible
-                    var tc = document.getElementById("trained-count");
-                    if (tc) tc.innerText = window.HRState.trainedEmployees.length;
-
-                }, 400);
-            }
-        }, 700);
-    },
-
-    // -------------------------------------------------------
-    // Stage 5 — Recruitment Channels
-    // -------------------------------------------------------
-    renderStage5: function(container) {
-        var plan = window.HRState.planChosen;
-        var planNote = plan === 'combination'
-            ? '<p class="text-warning">Plan: <strong>Combination</strong> — Train internally + recruit externally.</p>'
-            : plan === 'train'
-            ? '<p class="text-warning">Plan: <strong>Train / Upskill</strong> — Internal employees will be developed, but recruitment is still needed for the headcount gap.</p>'
-            : '<p class="text-warning">Plan: <strong>Recruit</strong> — Fill the workforce gap externally.</p>';
-
-        container.innerHTML =
-            '<div class="panel">' +
-              '<div class="panel-header">RECRUITMENT CENTER</div>' +
-              '<div class="grid-2">' +
-                '<div>' +
-                  '<h3 class="text-primary">POSITION: AI ENGINEER</h3>' +
-                  '<p><strong>OPENINGS:</strong> 4</p>' +
-                  '<p><strong>REQUIRED SKILLS:</strong> Python, Machine Learning, Cloud, AI</p>' +
-                  '<p><strong>EXPERIENCE:</strong> 2+ years</p>' +
-                '</div>' +
-                '<div>' + planNote + '</div>' +
-              '</div>' +
-            '</div>' +
-            '<div class="action-prompt text-center">' +
-              '<h3>CHOOSE RECRUITMENT SOURCE</h3>' +
-              '<div class="grid-3" style="margin-top:1.5rem">' +
-                '<div class="card" style="text-align:center; cursor:pointer" onclick="window.HRSim.postJob(\'network\')">' +
-                  '<h4>PROFESSIONAL NETWORK</h4>' +
-                  '<p class="text-muted" style="margin-top:5px">Reach: 1,240+ applicants</p>' +
-                  '<p class="text-warning">Cost: \u20B920,000</p>' +
-                  '<button class="btn primary small" style="margin-top:10px; pointer-events:none">PUBLISH JOB</button>' +
-                '</div>' +
-                '<div class="card" style="text-align:center; cursor:pointer" onclick="window.HRSim.postJob(\'college\')">' +
-                  '<h4>COLLEGE RECRUITMENT</h4>' +
-                  '<p class="text-muted" style="margin-top:5px">Reach: 350+ applicants</p>' +
-                  '<p class="text-warning">Cost: \u20B915,000</p>' +
-                  '<button class="btn primary small" style="margin-top:10px; pointer-events:none">START DRIVE</button>' +
-                '</div>' +
-                '<div class="card" style="text-align:center; cursor:pointer" onclick="window.HRSim.postJob(\'referral\')">' +
-                  '<h4>EMPLOYEE REFERRAL</h4>' +
-                  '<p class="text-muted" style="margin-top:5px">Reach: 120+ applicants</p>' +
-                  '<p class="text-warning">Cost: \u20B910,000</p>' +
-                  '<button class="btn primary small" style="margin-top:10px; pointer-events:none">ACTIVATE</button>' +
-                '</div>' +
-              '</div>' +
-            '</div>';
-    },
-
-    // -------------------------------------------------------
-    // Stage 7 — Candidate Screening (funnel + candidate cards)
-    // -------------------------------------------------------
-    renderStage7: function(container) {
-        var s = window.HRState;
-        var channelLabel = s.recruitmentChannel ? s.recruitmentChannel.toUpperCase() : "";
-
-        container.innerHTML =
-            '<div class="panel">' +
-              '<div class="panel-header">RECRUITMENT FUNNEL \u2014 ' + channelLabel + '</div>' +
-              '<div style="display:flex; gap:2rem; align-items:flex-start; flex-wrap:wrap">' +
-                '<div style="flex:1; min-width:200px" id="funnel-container">' +
-                  '<div class="funnel-stage"><span>APPLICATIONS</span><span id="f-apps" class="text-primary" style="font-weight:bold; font-size:1.2rem">0</span></div>' +
-                  '<div class="funnel-stage" style="opacity:0.3" id="f-stage-short"><span>SHORTLISTED</span><span>5</span></div>' +
-                  '<div class="funnel-stage" style="opacity:0.3" id="f-stage-assess"><span>ASSESSMENT</span><span>4</span></div>' +
-                  '<div class="funnel-stage" style="opacity:0.3" id="f-stage-int"><span>INTERVIEW</span><span>4</span></div>' +
-                '</div>' +
-                '<div style="flex:1; min-width:200px; text-align:center; padding-top:10px" id="screening-action-area">' +
-                  '<p class="text-muted">Applications arriving...</p>' +
-                '</div>' +
-              '</div>' +
-            '</div>' +
-
-            '<div class="panel" style="margin-top:1.5rem">' +
-              '<div class="panel-header">CANDIDATE DATABASE</div>' +
-              '<p class="text-muted" style="margin-bottom:1rem">Screen the applicants first to enable candidate selection.</p>' +
-              '<div class="grid-3" id="candidate-grid" style="opacity:0.4; pointer-events:none">' +
-              '</div>' +
-            '</div>';
-
-        // Populate candidate cards (grayed out until screened)
-        var grid = document.getElementById("candidate-grid");
-        s.candidates.forEach(function(cand) {
-            var div = document.createElement("div");
-            div.innerHTML = window.HRUI.createCandidateCard(cand);
-            grid.appendChild(div.firstElementChild);
-        });
-
-        // Animate application count
-        var fApps = document.getElementById("f-apps");
-        window.HRAnim.animateValue(fApps, 0, s.applications, 1800);
-
-        // After animation, reveal screen button
-        setTimeout(function() {
-            var actionArea = document.getElementById("screening-action-area");
-            if (!actionArea) return;
-            actionArea.innerHTML =
-                '<h3 style="margin-bottom:1rem">HR TEAM: Screen the applicants</h3>' +
-                '<button class="btn primary" onclick="window.HRSim.screenCandidates()">SCREEN CANDIDATES</button>' +
-                '<p class="text-muted" style="margin-top:1rem; font-size:0.9rem">Or type <strong>screen candidates</strong> in the terminal.</p>';
-        }, 2000);
-    },
-
-    createCandidateCard: function(cand) {
-        var isHired = window.HRState.hiredCandidates.includes(cand.id);
-        var hiredBadge = isHired ? '<div style="text-align:center; color:var(--success); font-weight:bold; margin-top:8px;">\u2713 HIRED</div>' : '';
-        var selectedClass = isHired ? " selected" : "";
-
-        return '<div class="card' + selectedClass + '" id="cand-card-' + cand.id + '" onclick="window.HRUI.showCandidateModal(\'' + cand.id + '\')">' +
-            '<h4>' + cand.name + '</h4>' +
-            '<p class="text-primary" style="font-size:0.9rem">Exp: ' + cand.experience + ' yrs | Score: ' + cand.assessment + '</p>' +
-            '<div class="skill-bar-container" style="margin-top:8px">' +
-              '<span class="skill-label">Python</span>' +
-              '<div class="skill-track"><div class="skill-fill" style="width:' + cand.python + '%"></div></div>' +
-              '<span class="skill-val">' + cand.python + '</span>' +
-            '</div>' +
-            '<div class="skill-bar-container">' +
-              '<span class="skill-label">ML</span>' +
-              '<div class="skill-track"><div class="skill-fill" style="width:' + cand.ml + '%"></div></div>' +
-              '<span class="skill-val">' + cand.ml + '</span>' +
-            '</div>' +
-            '<div class="skill-bar-container">' +
-              '<span class="skill-label">Cloud</span>' +
-              '<div class="skill-track"><div class="skill-fill" style="width:' + cand.cloud + '%"></div></div>' +
-              '<span class="skill-val">' + cand.cloud + '</span>' +
-            '</div>' +
-            '<div class="skill-bar-container">' +
-              '<span class="skill-label">AI</span>' +
-              '<div class="skill-track"><div class="skill-fill" style="width:' + cand.ai + '%"></div></div>' +
-              '<span class="skill-val">' + cand.ai + '</span>' +
-            '</div>' +
-            hiredBadge +
-          '</div>';
-    },
-
-    // -------------------------------------------------------
-    // Stage 8 — Hiring Decision
-    // -------------------------------------------------------
-    renderStage8: function(container) {
-        var s = window.HRState;
-        var funnelData = window.HRData.funnel[s.recruitmentChannel] || { apps: s.applications, short: 5, assess: 4, interview: 4 };
-
-        container.innerHTML =
-            '<div class="panel">' +
-              '<div class="panel-header">RECRUITMENT FUNNEL \u2014 SCREENING COMPLETE</div>' +
-              '<div style="display:flex; gap:2rem; align-items:flex-start; flex-wrap:wrap">' +
-                '<div style="flex:1; min-width:200px">' +
-                  '<div class="funnel-stage"><span>APPLICATIONS</span><span class="text-primary" style="font-weight:bold">' + s.applications + '</span></div>' +
-                  '<div class="funnel-stage"><span>SHORTLISTED</span><span class="text-primary" style="font-weight:bold">' + funnelData.short + '</span></div>' +
-                  '<div class="funnel-stage"><span>ASSESSMENT</span><span class="text-primary" style="font-weight:bold">' + funnelData.assess + '</span></div>' +
-                  '<div class="funnel-stage"><span>INTERVIEW</span><span class="text-primary" style="font-weight:bold">' + funnelData.interview + '</span></div>' +
-                '</div>' +
-                '<div style="flex:1; min-width:200px; padding:15px" class="action-prompt">' +
-                  '<h2 class="text-warning">YOU NEED TO HIRE 4 AI ENGINEERS.</h2>' +
-                  '<p style="margin-top:8px">Click a candidate card to view their full profile, then hire.</p>' +
-                  '<p style="margin-top:8px; font-size:1.1rem">Hired: <strong><span id="hired-count">' + s.hiredCandidates.length + '</span> / 4</strong></p>' +
-                  '<p class="text-muted" style="margin-top:8px; font-size:0.85rem">Cost: \u20B92,00,000 per hire | Budget: <span id="hire-budget">\u20B9' + s.budget.toLocaleString('en-IN') + '</span></p>' +
-                '</div>' +
-              '</div>' +
-            '</div>' +
-
-            '<div class="panel" style="margin-top:1.5rem">' +
-              '<div class="panel-header">FINAL CANDIDATE POOL \u2014 SELECT YOUR HIRES</div>' +
-              '<div class="grid-3" id="candidate-grid"></div>' +
-            '</div>';
-
-        var grid = document.getElementById("candidate-grid");
-        s.candidates.forEach(function(cand) {
-            var div = document.createElement("div");
-            div.innerHTML = window.HRUI.createCandidateCard(cand);
-            grid.appendChild(div.firstElementChild);
-        });
-    },
-
-    // -------------------------------------------------------
-    // Stage 9 — Deadline Event + Training Evaluation
-    // -------------------------------------------------------
-    renderStage9: function(container) {
-        var s = window.HRState;
-
-        var html =
-            '<div class="panel anim-fade-in" style="border-color:var(--danger); margin-bottom:1.5rem">' +
-              '<h2 style="text-align:center; color:var(--danger)">&#128680; CLIENT UPDATE</h2>' +
-              '<h3 style="text-align:center; margin-top:0.5rem">The client has moved the project deadline.</h3>' +
-              '<div style="display:flex; justify-content:center; gap:3rem; margin-top:1.5rem; font-size:1.2rem">' +
-                '<div style="text-align:center">' +
-                  '<p class="text-muted">Old deadline:</p>' +
-                  '<p style="text-decoration:line-through; color:var(--danger)">6 months</p>' +
-                '</div>' +
-                '<div style="text-align:center">' +
-                  '<p class="text-muted">New deadline:</p>' +
-                  '<p class="text-warning" style="font-weight:bold; font-size:1.5rem">4 months</p>' +
-                '</div>' +
-              '</div>' +
-              '<p style="text-align:center; margin-top:1.5rem; color:var(--warning)">HR TEAM: Can your workforce plan still deliver the project?</p>' +
-            '</div>';
-
-        if (s.trainedEmployees.length > 0) {
-            html += '<div class="panel">' +
-                '<div class="panel-header">TRAINING EVALUATION</div>' +
-                '<p>Before concluding, we must evaluate whether the training program was effective.</p>' +
-                '<div class="grid-2" style="margin-top:1.5rem">';
-
-            s.trainedEmployees.forEach(function(empId) {
-                var emp = s.employees.find(function(e) { return e.id === empId; });
-                if (!emp) return;
-                // Calculate the original Cloud value (current minus 35, floored at 0)
-                var afterCloud  = emp.cloud;
-                var beforeCloud = Math.max(0, afterCloud - 35);
-
-                html += '<div class="card" style="text-align:center">' +
-                    '<h4>' + emp.name + ' (' + emp.id + ')</h4>' +
-                    '<p class="text-muted">Cloud Skill</p>' +
-                    '<p>Before: <span class="text-danger">' + beforeCloud + '</span> &rarr; After: <span class="text-success">' + afterCloud + '</span></p>' +
-                    '<div class="skill-bar-container" style="margin-top:10px">' +
-                      '<span class="skill-label">Before</span>' +
-                      '<div class="skill-track" style="flex:1"><div class="skill-fill" style="width:' + beforeCloud + '%; background:var(--danger)"></div></div>' +
-                    '</div>' +
-                    '<div class="skill-bar-container">' +
-                      '<span class="skill-label">After</span>' +
-                      '<div class="skill-track" style="flex:1"><div class="skill-fill" style="width:' + afterCloud + '%; background:var(--success)"></div></div>' +
-                    '</div>' +
-                  '</div>';
-            });
-
-            html += '</div>' +
-                '<div class="action-prompt" style="margin-top:2rem; text-align:center">' +
-                  '<h3>Project Performance Simulation</h3>' +
-                  '<p>Before training: <span class="text-danger">62% project readiness</span></p>' +
-                  '<p>After training: <span class="text-success">87% project readiness</span></p>' +
-                  '<h4 style="margin:1.5rem 0">Was the training effective?</h4>' +
-                  '<button class="btn secondary" style="margin-right:10px" onclick="window.HRUI.showEvalResult(\'yes\')">YES</button>' +
-                  '<button class="btn secondary" onclick="window.HRUI.showEvalResult(\'no\')">NO</button>' +
-                '</div>' +
-                '<div id="eval-result" style="text-align:center; margin-top:1.5rem; font-weight:bold"></div>' +
-              '</div>';
-        } else {
-            html += '<div class="action-prompt text-center">' +
-                '<p>No training was conducted in this simulation path.</p>' +
-                '<button class="btn primary" onclick="window.HRCommands.execute(\'show dashboard\')" style="margin-top:1rem">GENERATE FINAL BI DASHBOARD</button>' +
-              '</div>';
-        }
-
-        container.innerHTML = html;
-    },
-
-    showEvalResult: function(ans) {
-        var res = document.getElementById("eval-result");
-        if (!res) return;
-
-        if (ans === 'yes') {
-            res.innerHTML = '<span class="text-success">\u2714 Correct. Training effectiveness is evaluated by comparing intended capability improvement with actual results. The Cloud skill improvement from ~45 to ~80 represents a measurable, meaningful gain.</span>';
-        } else {
-            res.innerHTML = '<span class="text-warning">Training completion does not automatically mean training was effective. We must measure the actual performance improvement against the intended target.</span>';
-        }
-
-        setTimeout(function() {
-            var res2 = document.getElementById("eval-result");
-            if (res2) {
-                var btn = document.createElement("div");
-                btn.style.marginTop = "2rem";
-                btn.innerHTML = '<button class="btn primary" onclick="window.HRCommands.execute(\'show dashboard\')">GENERATE FINAL BI DASHBOARD</button>';
-                res2.appendChild(btn);
-            }
-        }, 1500);
-    },
-
-    // -------------------------------------------------------
-    // Stage 10 — BI Dashboard
-    // -------------------------------------------------------
-    renderStage10: function(container) {
-        var s         = window.HRState;
-        var readiness = window.HRSim.calculateReadiness();
-        var totalReq  = s.required.ai + s.required.ml + s.required.data;
-        var totalAvail= s.available.ai + s.available.ml + s.available.data;
-        var readinessColor = readiness >= 80 ? 'var(--success)' : readiness >= 60 ? 'var(--warning)' : 'var(--danger)';
-
-        var html =
-            '<div class="panel">' +
-              '<h1 style="text-align:center; color:var(--primary); letter-spacing:2px; margin-bottom:0.3rem">NOVATECH AI</h1>' +
-              '<p style="text-align:center; color:var(--text-muted); letter-spacing:2px; margin-bottom:2rem; font-size:0.9rem">HR WORKFORCE INTELLIGENCE DASHBOARD</p>' +
-
-              '<div class="dashboard-grid" style="grid-template-columns: repeat(3, 1fr);">' +
-                '<div class="kpi-card">' +
-                  '<div class="label">Workforce Coverage</div>' +
-                  '<div class="value text-success">' + totalAvail + ' / ' + totalReq + '</div>' +
-                '</div>' +
-                '<div class="kpi-card">' +
-                  '<div class="label">Candidates Hired</div>' +
-                  '<div class="value text-primary">' + s.hiredCandidates.length + '</div>' +
-                '</div>' +
-                '<div class="kpi-card">' +
-                  '<div class="label">Training Participants</div>' +
-                  '<div class="value" style="color:var(--secondary)">' + s.trainedEmployees.length + '</div>' +
-                '</div>' +
-                '<div class="kpi-card">' +
-                  '<div class="label">Remaining Budget</div>' +
-                  '<div class="value text-warning">\u20B9' + (s.budget / 100000).toFixed(1) + 'L</div>' +
-                '</div>' +
-                '<div class="kpi-card">' +
-                  '<div class="label">Applications Received</div>' +
-                  '<div class="value text-primary">' + (s.applications || 0) + '</div>' +
-                '</div>' +
-                '<div class="kpi-card">' +
-                  '<div class="label">Recruitment Cost</div>' +
-                  '<div class="value text-danger">\u20B9' + (s.recruitmentCost / 100000).toFixed(1) + 'L</div>' +
-                '</div>' +
-                '<div class="kpi-card">' +
-                  '<div class="label">Training Cost</div>' +
-                  '<div class="value text-warning">\u20B9' + (s.trainingCost / 1000).toFixed(0) + 'K</div>' +
-                '</div>' +
-                '<div class="kpi-card">' +
-                  '<div class="label">Deadline</div>' +
-                  '<div class="value ' + (s.deadlineChanged ? 'text-danger' : 'text-success') + '">' + s.currentDeadlineMonths + ' Months</div>' +
-                '</div>' +
-                '<div class="kpi-card">' +
-                  '<div class="label">Employee Morale</div>' +
-                  '<div class="value" style="color:' + (s.morale >= 80 ? 'var(--success)' : s.morale >= 50 ? 'var(--warning)' : 'var(--danger)') + '">' + s.morale + '%</div>' +
-                '</div>' +
-              '</div>' +
-
-              '<div class="grid-2" style="margin-top:2rem">' +
-                '<div class="card">' +
-                  '<h3 style="text-align:center; margin-bottom:1rem">Operational Readiness</h3>' +
-                  '<div style="display:flex; justify-content:center; align-items:center; height:130px">' +
-                    '<span style="font-size:4rem; font-weight:800; color:' + readinessColor + '">' + readiness + '%</span>' +
-                  '</div>' +
-                  '<p style="text-align:center; color:var(--text-muted); font-size:0.85rem">Based on workforce coverage, training & budget</p>' +
-                '</div>' +
-                '<div class="card">' +
-                  '<h3 style="text-align:center; margin-bottom:1rem">Recruitment Funnel</h3>' +
-                  '<div style="padding:5px">' +
-                    '<div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--glass-border); padding:8px 0"><span>Applications</span><span class="text-primary">' + (s.applications || 0) + '</span></div>' +
-                    '<div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--glass-border); padding:8px 0"><span>Shortlisted</span><span class="text-primary">5</span></div>' +
-                    '<div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--glass-border); padding:8px 0"><span>Interviewed</span><span class="text-primary">4</span></div>' +
-                    '<div style="display:flex; justify-content:space-between; padding:8px 0"><span>Hired</span><span class="text-success">' + s.hiredCandidates.length + '</span></div>' +
-                  '</div>' +
-                '</div>' +
-              '</div>' +
-
-              '<div style="text-align:center; margin-top:2rem">' +
-                '<button class="btn primary" onclick="window.HRUI.renderFinalSummary()">SHOW FINAL EDUCATIONAL SUMMARY &#8250;</button>' +
-              '</div>' +
-            '</div>';
-
-        container.innerHTML = html;
-    },
-
-    // -------------------------------------------------------
-    // Final Summary
-    // -------------------------------------------------------
-    renderFinalSummary: function() {
-        var container = document.getElementById("dynamic-content");
-        container.innerHTML =
-            '<div class="panel anim-fade-in" style="padding:3rem 2rem; text-align:center">' +
-              '<h1 style="color:var(--primary); font-size:2.2rem; margin-bottom:2rem">YOU JUST RAN AN HR DEPARTMENT.</h1>' +
-
-              '<div style="display:flex; flex-direction:column; align-items:center; gap:8px; font-family:monospace; font-size:1.15rem; color:var(--secondary); margin-bottom:3rem">' +
-                '<div>BUSINESS REQUIREMENT</div>' +
-                '<div style="color:var(--text-muted)">&#8595;</div>' +
-                '<div>WORKFORCE PLANNING</div>' +
-                '<div style="color:var(--text-muted)">&#8595;</div>' +
-                '<div>GAP ANALYSIS</div>' +
-                '<div style="color:var(--text-muted)">&#8595;</div>' +
-                '<div>RECRUITMENT / TRAINING</div>' +
-                '<div style="color:var(--text-muted)">&#8595;</div>' +
-                '<div>SELECTION</div>' +
-                '<div style="color:var(--text-muted)">&#8595;</div>' +
-                '<div>TRAINING EVALUATION</div>' +
-                '<div style="color:var(--text-muted)">&#8595;</div>' +
-                '<div style="color:var(--success); font-weight:bold">BUSINESS READINESS</div>' +
-              '</div>' +
-
-              '<div class="grid-2" style="text-align:left; gap:2rem; max-width:900px; margin:0 auto">' +
-                '<div>' +
-                  '<h3 class="text-primary">Human Resources</h3>' +
-                  '<p class="text-muted">Managing the people and capabilities needed by an organization.</p>' +
-                  '<h3 class="text-primary" style="margin-top:1.5rem">Human Resource Planning</h3>' +
-                  '<p class="text-muted">Determining how many people and what capabilities are required, then comparing them with what is available.</p>' +
-                  '<h3 class="text-primary" style="margin-top:1.5rem">Recruitment</h3>' +
-                  '<p class="text-muted">Finding and attracting suitable candidates for vacancies through appropriate channels.</p>' +
-                '</div>' +
-                '<div>' +
-                  '<h3 class="text-primary">Training and Development</h3>' +
-                  '<p class="text-muted">Improving employee capabilities for current and future responsibilities. Effectiveness must be measured.</p>' +
-                  '<div class="action-prompt" style="margin-top:1.5rem; background:rgba(14,165,233,0.08); border-color:var(--primary)">' +
-                    '<h3 style="color:var(--primary)">Business Intelligence</h3>' +
-                    '<p style="color:var(--text-main)">Using workforce and recruitment data to support better HR decisions — answering <em>how many, what skills, where to recruit, who to hire, did training work?</em></p>' +
-                  '</div>' +
-                '</div>' +
-              '</div>' +
-
-              '<div style="margin-top:3rem">' +
-                '<button class="btn secondary" onclick="window.HRApp.resetSimulation()">RESTART SIMULATION</button>' +
-              '</div>' +
-            '</div>';
-    },
-
-    // -------------------------------------------------------
-    // Modals
-    // -------------------------------------------------------
-    showEmployeeModal: function(id) {
-        var emp = window.HRState.employees.find(function(e) { return e.id === id; });
-        if (!emp) return;
-
-        var isTrained  = window.HRState.trainedEmployees.includes(id);
-        var trainedBadge = isTrained ? '<p class="text-success" style="margin-top:5px">\u2713 Training completed</p>' : '';
-
-        var trainBtn = '';
-        if (window.HRState.stage === 4 && !isTrained) {
-            trainBtn = '<div style="margin-top:2rem; text-align:center">' +
-                '<button class="btn primary" onclick="var r=window.HRSim.trainEmployee(\'' + emp.id + '\'); if(r){window.HRUI.renderTrainingAnimation(r);}">TRAIN THIS EMPLOYEE</button>' +
-              '</div>';
-        }
-
-        document.getElementById("modal-content").innerHTML =
-            '<h2 class="text-primary">' + emp.name + '</h2>' +
-            '<p class="text-muted">' + emp.role + ' | ' + emp.dept + '</p>' +
-            trainedBadge +
-            '<hr style="border:0; border-top:1px solid var(--glass-border); margin:1rem 0">' +
-            '<p><strong>Employee ID:</strong> ' + emp.id + '</p>' +
-            '<p><strong>Experience:</strong> ' + emp.experience + ' years</p>' +
-            '<div style="margin-top:1rem">' +
-              '<div class="skill-bar-container"><span class="skill-label">Python</span><div class="skill-track" style="flex:1"><div class="skill-fill" style="width:' + emp.python + '%"></div></div><span class="skill-val">' + emp.python + '</span></div>' +
-              '<div class="skill-bar-container"><span class="skill-label">Mach. Learning</span><div class="skill-track" style="flex:1"><div class="skill-fill" style="width:' + emp.ml + '%"></div></div><span class="skill-val">' + emp.ml + '</span></div>' +
-              '<div class="skill-bar-container"><span class="skill-label">Cloud</span><div class="skill-track" style="flex:1"><div class="skill-fill" style="width:' + emp.cloud + '%; background:' + (isTrained ? 'var(--success)' : 'var(--primary)') + '"></div></div><span class="skill-val">' + emp.cloud + '</span></div>' +
-              '<div class="skill-bar-container"><span class="skill-label">AI</span><div class="skill-track" style="flex:1"><div class="skill-fill" style="width:' + emp.ai + '%"></div></div><span class="skill-val">' + emp.ai + '</span></div>' +
-            '</div>' +
-            trainBtn;
-
-        document.getElementById("modal-overlay").classList.remove("hidden");
-    },
-
-    showCandidateModal: function(id) {
-        var cand = window.HRState.candidates.find(function(c) { return c.id === id; });
-        if (!cand) return;
-
-        var isHired = window.HRState.hiredCandidates.includes(id);
-        var validIds = ['B', 'C', 'D', 'E'];
-        var isEligible = validIds.includes(id);
-
-        var actionHtml = '';
-        if (window.HRState.stage === 8) {
-            if (isHired) {
-                actionHtml = '<h3 class="text-success" style="text-align:center; margin-top:1.5rem">\u2713 ALREADY HIRED</h3>';
-            } else if (isEligible) {
-                actionHtml = '<div style="text-align:center; margin-top:1.5rem">' +
-                    '<button class="btn primary" onclick="window.HRSim.hireCandidate(\'' + cand.id + '\'); document.getElementById(\'modal-overlay\').classList.add(\'hidden\');">HIRE THIS CANDIDATE</button>' +
-                  '</div>';
-            } else {
-                actionHtml = '<p class="text-danger" style="text-align:center; margin-top:1.5rem">This candidate did not pass the minimum screening criteria.</p>';
-            }
-        }
-
-        document.getElementById("modal-content").innerHTML =
-            '<h2 class="text-primary">' + cand.name + '</h2>' +
-            '<p class="text-muted">Candidate ' + cand.id + ' | Exp: ' + cand.experience + ' yrs | Assessment: ' + cand.assessment + '/100</p>' +
-            '<hr style="border:0; border-top:1px solid var(--glass-border); margin:1rem 0">' +
-            '<div>' +
-              '<div class="skill-bar-container"><span class="skill-label">Python</span><div class="skill-track" style="flex:1"><div class="skill-fill" style="width:' + cand.python + '%"></div></div><span class="skill-val">' + cand.python + '</span></div>' +
-              '<div class="skill-bar-container"><span class="skill-label">Mach. Learning</span><div class="skill-track" style="flex:1"><div class="skill-fill" style="width:' + cand.ml + '%"></div></div><span class="skill-val">' + cand.ml + '</span></div>' +
-              '<div class="skill-bar-container"><span class="skill-label">Cloud</span><div class="skill-track" style="flex:1"><div class="skill-fill" style="width:' + cand.cloud + '%"></div></div><span class="skill-val">' + cand.cloud + '</span></div>' +
-              '<div class="skill-bar-container"><span class="skill-label">AI</span><div class="skill-track" style="flex:1"><div class="skill-fill" style="width:' + cand.ai + '%"></div></div><span class="skill-val">' + cand.ai + '</span></div>' +
-            '</div>' +
-            (!isEligible && window.HRState.stage === 8 ? '' : '') +
-            actionHtml;
-
-        document.getElementById("modal-overlay").classList.remove("hidden");
+  // ── KPI BAR ────────────────────────────────────────────
+  updateKPIs: function() {
+    var s = window.HRState;
+    var fmt = function(n) { return '₹' + n.toLocaleString('en-IN'); };
+
+    var budgetEl    = document.getElementById('kpi-budget-val');
+    var timeEl      = document.getElementById('kpi-time-val');
+    var moraleEl    = document.getElementById('kpi-morale-val');
+    var readinessEl = document.getElementById('kpi-readiness-val');
+    var moralePill  = document.getElementById('kpi-morale');
+    var budgetPill  = document.getElementById('kpi-budget');
+
+    if (budgetEl)    budgetEl.innerText    = fmt(s.budget);
+    if (timeEl)      timeEl.innerText      = (s.deadline - s.timeUsed).toFixed(1) + ' mo left';
+    if (moraleEl)    moraleEl.innerText    = s.morale + '%';
+    if (readinessEl) readinessEl.innerText = (window.HREngine.calculateReadiness()) + '%';
+
+    // Color coding
+    if (moralePill) {
+      moralePill.classList.remove('kpi-success', 'kpi-warning', 'kpi-danger');
+      if (s.morale >= 80)       moralePill.classList.add('kpi-success');
+      else if (s.morale >= 50)  moralePill.classList.add('kpi-warning');
+      else                      moralePill.classList.add('kpi-danger');
     }
+    if (budgetPill) {
+      var pct = s.budget / s.scenario.budget;
+      budgetPill.classList.remove('kpi-success', 'kpi-warning', 'kpi-danger');
+      if (pct >= 0.4)      budgetPill.classList.add('kpi-success');
+      else if (pct >= 0.15) budgetPill.classList.add('kpi-warning');
+      else                  budgetPill.classList.add('kpi-danger');
+    }
+  },
+
+  // ── SCORECARD ──────────────────────────────────────────
+  updateScorecard: function() {
+    var s    = window.HRState;
+    var cont = document.getElementById('scorecard-items');
+    if (!cont) return;
+
+    var totalReq   = s.totalRequired();
+    var totalAvail = s.totalAvailable();
+    var coveragePct = totalReq > 0 ? Math.round((totalAvail / totalReq) * 100) : 0;
+
+    var budgetPct = s.scenario ? Math.round((s.budget / s.scenario.budget) * 100) : 100;
+
+    var items = [
+      { label: 'Workforce Coverage', val: coveragePct + '%', pct: coveragePct, color: coveragePct >= 80 ? '#059669' : coveragePct >= 60 ? '#d97706' : '#dc2626' },
+      { label: 'Budget Remaining', val: Math.round((s.budget/1000)) + 'K', pct: budgetPct, color: budgetPct >= 40 ? '#059669' : budgetPct >= 15 ? '#d97706' : '#dc2626' },
+      { label: 'Team Morale', val: s.morale + '%', pct: s.morale, color: s.morale >= 80 ? '#059669' : s.morale >= 50 ? '#d97706' : '#dc2626' },
+      { label: 'Project Readiness', val: s.readiness + '%', pct: s.readiness, color: s.readiness >= 75 ? '#059669' : s.readiness >= 50 ? '#d97706' : '#dc2626' },
+      { label: 'Hired', val: s.hiredCandidates.length + ' candidates', pct: Math.min(100, s.hiredCandidates.length * 25), color: '#4f46e5' },
+      { label: 'Trained', val: s.trainedEmployees.length + ' employees', pct: Math.min(100, s.trainedEmployees.length * 33), color: '#0d9488' }
+    ];
+
+    cont.innerHTML = items.map(function(item) {
+      return '<div class="scorecard-item">' +
+        '<div class="sc-item-header">' +
+          '<span class="sc-item-label">' + item.label + '</span>' +
+          '<span class="sc-item-val">' + item.val + '</span>' +
+        '</div>' +
+        '<div class="sc-bar-track">' +
+          '<div class="sc-bar-fill" style="width:' + Math.min(100, item.pct) + '%; background:' + item.color + '"></div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  },
+
+  // ── NAVIGATION ─────────────────────────────────────────
+  updateNav: function() {
+    var s    = window.HRState;
+    var items = document.querySelectorAll('.nav-item');
+    items.forEach(function(el) {
+      var phase = parseInt(el.getAttribute('data-phase'));
+      el.classList.remove('active', 'completed', 'locked');
+      if (phase === s.phase) el.classList.add('active');
+      else if (s.completedPhases.includes(phase)) el.classList.add('completed');
+      else if (phase > s.phase && !s.completedPhases.includes(phase)) el.classList.add('locked');
+    });
+
+    // Update phase label
+    var phaseNames = ['', 'Business Demand', 'Workforce Planning', 'Talent Intelligence', 'HR Strategy', 'Recruitment', 'Selection', 'Training & Dev', 'HR Events', 'Final Report'];
+    var label = document.getElementById('phase-label');
+    if (label) label.innerText = 'Phase ' + s.phase + ' — ' + (phaseNames[s.phase] || '');
+  },
+
+  // ── TIMELINE ───────────────────────────────────────────
+  updateTimeline: function() {
+    var s     = window.HRState;
+    var track = document.getElementById('timeline-track');
+    if (!track) return;
+
+    var phaseMonths = { 1:0, 2:0.5, 3:0.5, 4:0.5, 5:1, 6:1, 7:1.5, 8:0, 9:0 };
+    var cumulativeMonth = 1;
+    var timelineData = [];
+
+    for (var ph = 1; ph <= 9; ph++) {
+      timelineData.push({
+        phase: ph,
+        label: 'Month ' + cumulativeMonth,
+        tag: ['', 'Demand', 'Planning', 'Talent', 'Strategy', 'Recruit', 'Select', 'Train', 'Events', 'Report'][ph],
+        month: cumulativeMonth
+      });
+      cumulativeMonth = Math.min(s.deadline, Math.ceil(cumulativeMonth + phaseMonths[ph]));
+    }
+
+    track.innerHTML = timelineData.map(function(td) {
+      var dotClass = 'timeline-dot';
+      if (s.completedPhases.includes(td.phase)) dotClass += ' done';
+      else if (s.phase === td.phase) dotClass += ' active';
+      else if (s.triggeredEvents.length > 0 && td.phase === 8) dotClass += ' event';
+
+      return '<div class="timeline-month">' +
+        '<div class="' + dotClass + '">' + (s.completedPhases.includes(td.phase) ? '✓' : td.phase) + '</div>' +
+        '<div class="timeline-month-label">' + td.label + '</div>' +
+        '<div class="timeline-month-tag">' + td.tag + '</div>' +
+      '</div>';
+    }).join('');
+  },
+
+  // ── OBJECTIVE BAR ──────────────────────────────────────
+  setObjective: function(text) {
+    var el = document.getElementById('objective-text');
+    if (el) el.innerText = text;
+  },
+
+  // ── SCENARIO BADGE ─────────────────────────────────────
+  updateScenarioBadge: function() {
+    var s  = window.HRState;
+    var el = document.getElementById('scenario-badge');
+    if (el && s.scenario) el.innerText = s.scenario.icon + ' ' + s.scenario.name;
+  },
+
+  // ── TOAST ──────────────────────────────────────────────
+  toast: function(msg, type, duration) {
+    type     = type || '';
+    duration = duration || 3000;
+    var cont = document.getElementById('toast-container');
+    if (!cont) return;
+    var div = document.createElement('div');
+    div.className = 'toast ' + type;
+    div.innerText = msg;
+    cont.appendChild(div);
+    setTimeout(function() { if (div.parentNode) div.parentNode.removeChild(div); }, duration);
+  },
+
+  // ── MODAL ──────────────────────────────────────────────
+  showModal: function(html) {
+    var cont = document.getElementById('modal-content');
+    var ov   = document.getElementById('modal-overlay');
+    if (cont) cont.innerHTML = html;
+    if (ov)   ov.classList.remove('hidden');
+  },
+  closeModal: function() {
+    var ov = document.getElementById('modal-overlay');
+    if (ov) ov.classList.add('hidden');
+  },
+
+  // ── SKILL BAR BUILDER ──────────────────────────────────
+  skillBar: function(label, value, extraClass) {
+    var cls = extraClass || (value >= 80 ? 'high' : value >= 60 ? 'med' : 'low');
+    return '<div class="skill-row">' +
+      '<span class="skill-name">' + label + '</span>' +
+      '<div class="skill-track"><div class="skill-fill ' + cls + '" data-val="' + value + '" style="width:0"></div></div>' +
+      '<span class="skill-val">' + value + '</span>' +
+    '</div>';
+  },
+
+  animateSkillBars: function(container) {
+    var fills = (container || document).querySelectorAll('.skill-fill[data-val]');
+    setTimeout(function() {
+      fills.forEach(function(el) {
+        el.style.width = el.getAttribute('data-val') + '%';
+      });
+    }, 80);
+  },
+
+  // ── RENDER DISPATCHER ──────────────────────────────────
+  renderPhase: function(phase) {
+    var cont = document.getElementById('dynamic-content');
+    if (!cont) return;
+    cont.innerHTML = '';
+    cont.className = '';
+    cont.offsetHeight; // force reflow for animation
+    cont.className = '';
+
+    var phaseRenderers = {
+      1: this.renderPhase1,
+      2: this.renderPhase2,
+      3: this.renderPhase3,
+      4: this.renderPhase4,
+      5: this.renderPhase5,
+      6: this.renderPhase6,
+      7: this.renderPhase7,
+      8: this.renderPhase8,
+      9: this.renderPhase9
+    };
+
+    if (phaseRenderers[phase]) {
+      phaseRenderers[phase].call(this, cont);
+    }
+
+    this.animateSkillBars(cont);
+  },
+
+  // ══════════════════════════════════════════════════════
+  // PHASE 1 — Business Demand
+  // ══════════════════════════════════════════════════════
+  renderPhase1: function(cont) {
+    var s  = window.HRState;
+    var sc = s.scenario;
+    this.setObjective('Review the incoming business demand and understand what NovaTech needs.');
+
+    var roleRows = Object.keys(sc.requirements).map(function(role) {
+      var req = sc.requirements[role];
+      return '<div class="flex-between" style="padding:10px 0; border-bottom:1px solid var(--border);">' +
+        '<span class="font-medium">' + role + '</span>' +
+        '<span class="font-bold c-accent">' + req.required + ' needed</span>' +
+      '</div>';
+    }).join('');
+
+    var diffLabel = { beginner: '🟢 Beginner', manager: '🟡 Manager', chro: '🔴 Chief HR Officer' };
+
+    cont.innerHTML =
+      '<div class="phase-intro anim-fadeup">' +
+        '<div class="phase-intro-num">Phase 1 — Business Demand</div>' +
+        '<div class="phase-intro-title">' + sc.icon + ' ' + sc.name + '</div>' +
+        '<div class="phase-intro-desc">' + sc.brief + '</div>' +
+        '<div style="display:flex; gap:24px; margin-top:24px; flex-wrap:wrap">' +
+          '<div><div style="color:rgba(255,255,255,0.5); font-size:0.75rem; font-weight:700; text-transform:uppercase; margin-bottom:4px;">Client</div><div style="color:white; font-weight:600;">' + sc.client + '</div></div>' +
+          '<div><div style="color:rgba(255,255,255,0.5); font-size:0.75rem; font-weight:700; text-transform:uppercase; margin-bottom:4px;">Deadline</div><div style="color:white; font-weight:600;">' + sc.deadline + ' Months</div></div>' +
+          '<div><div style="color:rgba(255,255,255,0.5); font-size:0.75rem; font-weight:700; text-transform:uppercase; margin-bottom:4px;">HR Budget</div><div style="color:white; font-weight:600;">₹' + s.budget.toLocaleString('en-IN') + '</div></div>' +
+          '<div><div style="color:rgba(255,255,255,0.5); font-size:0.75rem; font-weight:700; text-transform:uppercase; margin-bottom:4px;">Difficulty</div><div style="color:white; font-weight:600;">' + (diffLabel[s.difficulty] || s.difficulty) + '</div></div>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="grid-2 anim-fadeup-2">' +
+        '<div class="panel">' +
+          '<div class="panel-header"><div><div class="panel-title">Workforce Requirements</div><div class="panel-subtitle">Roles needed for the project</div></div></div>' +
+          roleRows +
+          '<div style="margin-top:16px; padding:12px; background:var(--surface-2); border-radius:var(--radius);">' +
+            '<div class="text-sm c-muted">Total positions required</div>' +
+            '<div class="text-2xl font-bold c-accent">' + s.totalRequired() + '</div>' +
+          '</div>' +
+        '</div>' +
+
+        '<div class="panel">' +
+          '<div class="panel-header"><div><div class="panel-title">Business Context</div></div></div>' +
+          '<p style="color:var(--text-muted); font-size:0.9rem; line-height:1.7; margin-bottom:16px;">' + sc.context + '</p>' +
+          '<div class="insight-box">' +
+            '<div class="insight-label">📘 HR Concept</div>' +
+            '<div class="insight-text">HR Planning begins when a business demand creates a workforce requirement. The HR team must first understand <strong>what skills</strong>, <strong>how many people</strong>, and <strong>by when</strong> before making any hiring or training decisions.</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="text-center anim-fadeup-3" style="padding:16px 0">' +
+        '<button class="btn btn-primary btn-lg" onclick="window.HREngine.advancePhase(2)">Analyze the Workforce →</button>' +
+      '</div>';
+  },
+
+  // ══════════════════════════════════════════════════════
+  // PHASE 2 — Workforce Planning & Gap Analysis
+  // ══════════════════════════════════════════════════════
+  renderPhase2: function(cont) {
+    var s   = window.HRState;
+    this.setObjective('Compare required vs available workforce and identify the skill gap.');
+
+    var gapCards = Object.keys(s.requirements).map(function(role) {
+      var req   = s.requirements[role];
+      var avail = s.available[role] || 0;
+      var gap   = req - avail;
+      var statusClass = gap > 0 ? 'gap-shortage' : gap < 0 ? 'gap-surplus' : 'gap-ok';
+      var statusText  = gap > 0 ? 'Shortage: ' + gap : gap < 0 ? 'Surplus: ' + Math.abs(gap) : 'Balanced';
+      return '<div class="gap-indicator anim-fadeup">' +
+        '<div class="role-name">' + role + '</div>' +
+        '<div class="gap-numbers">' +
+          '<span style="color:var(--coral)">' + avail + '</span>' +
+          '<span class="gap-arrow">→</span>' +
+          '<span style="color:var(--violet)">' + req + '</span>' +
+        '</div>' +
+        '<div class="text-xs c-muted">Available → Required</div>' +
+        '<div class="gap-badge ' + statusClass + '">' + statusText + '</div>' +
+      '</div>';
+    }).join('');
+
+    var analyzed = s.completedPhases.includes(2);
+
+    cont.innerHTML =
+      '<div class="phase-intro anim-fadeup" style="background:linear-gradient(135deg,#1e3a5f,#2d3f63)">' +
+        '<div class="phase-intro-num">Phase 2 — Workforce Planning</div>' +
+        '<div class="phase-intro-title">Gap Analysis</div>' +
+        '<div class="phase-intro-desc">Compare available workforce capacity against project requirements to identify shortages and surpluses.</div>' +
+      '</div>' +
+
+      '<div class="grid-3 anim-fadeup-2">' + gapCards + '</div>' +
+
+      '<div class="panel anim-fadeup-3">' +
+        '<div class="panel-header"><div class="panel-title">Workforce Gap Summary</div></div>' +
+        '<div class="grid-4">' +
+          '<div class="kpi-card kpi-card-accent">' +
+            '<div class="kpi-card-label">Total Required</div>' +
+            '<div class="kpi-card-val c-accent">' + s.totalRequired() + '</div>' +
+          '</div>' +
+          '<div class="kpi-card kpi-card-danger">' +
+            '<div class="kpi-card-label">Currently Available</div>' +
+            '<div class="kpi-card-val c-danger">' + s.totalAvailable() + '</div>' +
+          '</div>' +
+          '<div class="kpi-card kpi-card-warning">' +
+            '<div class="kpi-card-label">Critical Gap</div>' +
+            '<div class="kpi-card-val c-warning">' + s.totalGap() + '</div>' +
+          '</div>' +
+          '<div class="kpi-card kpi-card-info">' +
+            '<div class="kpi-card-label">Time to Fill</div>' +
+            '<div class="kpi-card-val c-info">' + s.deadline + ' mo</div>' +
+          '</div>' +
+        '</div>' +
+
+        '<div class="insight-box mt-2">' +
+          '<div class="insight-label">📘 HR Planning Concept</div>' +
+          '<div class="insight-text">' +
+            'Human Resource Planning (HRP) is the process of determining the number and types of people needed by an organization, then comparing that with availability. ' +
+            'The <strong>workforce gap</strong> tells HR whether to recruit, train, or restructure to meet business needs.' +
+          '</div>' +
+        '</div>' +
+
+        (analyzed ? '' :
+          '<div class="text-center mt-3">' +
+            '<button class="btn btn-primary btn-lg" onclick="window.HREngine.analyzeWorkforce()">Run Gap Analysis →</button>' +
+          '</div>'
+        ) +
+        (analyzed ?
+          '<div class="text-center mt-3">' +
+            '<button class="btn btn-navy" onclick="window.HRUI.renderPhase(3)">Inspect Talent Intelligence →</button>' +
+          '</div>'
+        : '') +
+      '</div>';
+  },
+
+  // ══════════════════════════════════════════════════════
+  // PHASE 3 — Talent Intelligence (Employee Profiles)
+  // ══════════════════════════════════════════════════════
+  renderPhase3: function(cont) {
+    var s    = window.HRState;
+    this.setObjective('Inspect your existing team to discover skills, training readiness, and promotion potential.');
+
+    var empCards = s.employees.map(function(emp) {
+      var riskColor = { LOW:'c-success', MEDIUM:'c-warning', HIGH:'c-danger' }[emp.retentionRisk] || 'c-muted';
+      return '<div class="card card-interactive anim-fadeup" onclick="window.HRUI.showEmployeeProfile(\'' + emp.id + '\')">' +
+        '<div class="flex-between mb-1">' +
+          '<div>' +
+            '<div class="font-bold">' + emp.name + '</div>' +
+            '<div class="text-sm c-muted">' + emp.role + ' · ' + emp.experience + ' yrs exp</div>' +
+          '</div>' +
+          '<div class="text-right">' +
+            '<div class="text-xs ' + riskColor + ' font-semibold">Retention Risk: ' + emp.retentionRisk + '</div>' +
+            '<div class="text-xs c-muted">Potential: ' + emp.promotionPotential + '</div>' +
+          '</div>' +
+        '</div>' +
+        window.HRUI.skillBar('Python', emp.python) +
+        window.HRUI.skillBar('ML', emp.ml) +
+        window.HRUI.skillBar('Cloud', emp.cloud) +
+        window.HRUI.skillBar('AI', emp.ai) +
+        '<div class="mt-1 text-xs c-muted">Click to open full profile & training options</div>' +
+      '</div>';
+    }).join('');
+
+    cont.innerHTML =
+      '<div class="phase-intro anim-fadeup" style="background:linear-gradient(135deg,#134e4a,#0d9488)">' +
+        '<div class="phase-intro-num">Phase 3 — Talent Intelligence</div>' +
+        '<div class="phase-intro-title">Your Team</div>' +
+        '<div class="phase-intro-desc">Before deciding how to close the workforce gap, investigate your existing employees. Look for hidden talent, training readiness, and skills that can be developed.</div>' +
+      '</div>' +
+
+      '<div class="grid-2">' + empCards + '</div>' +
+
+      '<div class="insight-box anim-fadeup-4">' +
+        '<div class="insight-label">📘 HR Intelligence</div>' +
+        '<div class="insight-text">Workforce intelligence involves understanding the <strong>skills, potential, and risks</strong> within your existing team before making external hiring decisions. Internal development is often more cost-effective and improves retention.</div>' +
+      '</div>' +
+
+      '<div class="text-center mt-2">' +
+        '<button class="btn btn-primary btn-lg" onclick="window.HREngine.advancePhase(4)">Choose HR Strategy →</button>' +
+      '</div>';
+
+    this.animateSkillBars(cont);
+  },
+
+  // ══════════════════════════════════════════════════════
+  // PHASE 4 — HR Strategy Choice
+  // ══════════════════════════════════════════════════════
+  renderPhase4: function(cont) {
+    var s  = window.HRState;
+    var sc = s.scenario;
+    this.setObjective('Choose your primary HR strategy: Recruit, Train, or a Combination.');
+
+    var strategies = [
+      {
+        id: 'recruit',
+        icon: '🌐',
+        name: 'Recruit Externally',
+        desc: 'Hire external candidates to fill the workforce gap quickly.',
+        pros: ['Fills gaps faster', 'Brings fresh external expertise', 'Scalable for large gaps'],
+        cons: ['Higher cost per hire', 'Cultural integration risk', 'Onboarding time needed', 'Retention risk if not engaged'],
+        timeImpact: 'Fast (2–4 weeks per hire)',
+        costImpact: 'High — ₹' + (sc.budget * 0.3 / 100000).toFixed(1) + 'L+ estimated',
+        moraleImpact: 'Neutral — may affect existing team'
+      },
+      {
+        id: 'train',
+        icon: '🎓',
+        name: 'Train & Develop',
+        desc: 'Invest in your existing employees by upskilling them to fill the skill gap.',
+        pros: ['Lower total cost', 'Improves morale & loyalty', 'Preserves domain knowledge', 'Long-term capability building'],
+        cons: ['Takes more time', 'May not fully close large gaps', 'Effectiveness varies by employee', 'Productivity dips during training'],
+        timeImpact: 'Slow (3–8 weeks per program)',
+        costImpact: 'Low — ₹20K–₹50K per program',
+        moraleImpact: 'Positive +5–8%'
+      },
+      {
+        id: 'combination',
+        icon: '⚖️',
+        name: 'Combination Strategy',
+        desc: 'Train existing employees for some roles, and recruit externally for others.',
+        pros: ['Balanced cost & speed', 'Flexible — use best approach per role', 'Reduces risk', 'Sustainable long-term approach'],
+        cons: ['Requires careful coordination', 'Higher management complexity', 'Must prioritize which gaps to fill each way'],
+        timeImpact: 'Moderate',
+        costImpact: 'Moderate — optimized per role',
+        moraleImpact: 'Positive +3%'
+      }
+    ];
+
+    var cards = strategies.map(function(st) {
+      var isSelected = s.strategyChosen === st.id;
+      return '<div class="card card-interactive ' + (isSelected ? 'card-selected' : '') + '" onclick="window.HREngine.chooseStrategy(\'' + st.id + '\')">' +
+        '<div style="font-size:2rem; margin-bottom:12px">' + st.icon + '</div>' +
+        '<div class="font-bold text-lg mb-1">' + st.name + '</div>' +
+        '<p class="text-sm c-muted mb-2">' + st.desc + '</p>' +
+        '<div style="display:flex; flex-direction:column; gap:4px; margin-bottom:12px">' +
+          st.pros.map(function(p) { return '<div class="text-xs c-success">✓ ' + p + '</div>'; }).join('') +
+          st.cons.map(function(c) { return '<div class="text-xs c-danger">✗ ' + c + '</div>'; }).join('') +
+        '</div>' +
+        '<div style="background:var(--surface-2); border-radius:var(--radius-sm); padding:10px; display:flex; flex-direction:column; gap:4px;">' +
+          '<div class="text-xs"><span class="c-muted">⏱ Time: </span><span class="font-semibold">' + st.timeImpact + '</span></div>' +
+          '<div class="text-xs"><span class="c-muted">💰 Cost: </span><span class="font-semibold">' + st.costImpact + '</span></div>' +
+          '<div class="text-xs"><span class="c-muted">💚 Morale: </span><span class="font-semibold">' + st.moraleImpact + '</span></div>' +
+        '</div>' +
+        (isSelected ? '<div class="text-center mt-2 font-bold c-success">✓ Selected</div>' : '') +
+      '</div>';
+    }).join('');
+
+    cont.innerHTML =
+      '<div class="phase-intro anim-fadeup" style="background:linear-gradient(135deg,#3730a3,#4f46e5)">' +
+        '<div class="phase-intro-num">Phase 4 — HR Strategy</div>' +
+        '<div class="phase-intro-title">How Will You Close the Gap?</div>' +
+        '<div class="phase-intro-desc">Every strategy creates different trade-offs. There is no single correct answer — the best strategy depends on your budget, deadline, and team composition.</div>' +
+      '</div>' +
+
+      '<div class="grid-3 anim-fadeup-2">' + cards + '</div>' +
+
+      '<div class="insight-box warn-insight anim-fadeup-3">' +
+        '<div class="insight-label">⚡ Optimal Strategy Hint</div>' +
+        '<div class="insight-text"><strong>For this scenario:</strong> ' + (sc.optimalStrategies ? (sc.optimalStrategies.combination || '') : '') + '</div>' +
+      '</div>';
+  },
+
+  // ══════════════════════════════════════════════════════
+  // PHASE 5 — Recruitment Channel
+  // ══════════════════════════════════════════════════════
+  renderPhase5: function(cont) {
+    var s = window.HRState;
+    this.setObjective('Choose a recruitment channel and post the job to attract candidates.');
+
+    var channels = [
+      { id: 'network', icon: '💼', name: 'Professional Network', desc: 'LinkedIn, Naukri, and professional job boards. Widest reach with experienced professionals.', cost: 20000, weeks: 2, reach: '1,000–1,500', quality: 'High', pros: ['Large pool', 'Experienced candidates', 'Brand visibility'], cons: ['High competition', 'Moderate cost', 'May need strong JD'] },
+      { id: 'college', icon: '🎓', name: 'Campus Recruitment', desc: 'Visit colleges and hire fresh graduates. High volume, high potential, low cost.', cost: 12000, weeks: 3, reach: '300–500', quality: 'Medium (High potential)', pros: ['Low cost', 'High enthusiasm', 'Moldable to culture'], cons: ['Less experience', 'Needs mentoring investment', 'Slower ramp-up'] },
+      { id: 'referral', icon: '🤝', name: 'Employee Referral', desc: 'Trust your team to recommend candidates. High culture fit, lower cost.', cost: 8000, weeks: 1, reach: '80–150', quality: 'High culture fit', pros: ['Fastest pipeline', 'Low cost', 'Pre-screened by team'], cons: ['Small pool', 'Limited diversity', 'Referral bias possible'] },
+      { id: 'agency', icon: '🏢', name: 'Recruitment Agency', desc: 'Specialized recruiters who find niche talent. Expensive but fast for rare skills.', cost: 45000, weeks: 1, reach: '20–50', quality: 'Very High', pros: ['Specialized talent', 'Fast turnaround', 'Pre-screened'], cons: ['Highest cost', 'Lower culture fit', 'Retention risk'] }
+    ];
+
+    var selected  = s.recruitmentChannel;
+    var cards = channels.map(function(ch) {
+      var affordable = s.budget >= ch.cost;
+      return '<div class="channel-card ' + (selected === ch.id ? 'selected' : '') + (affordable ? '' : ' card-danger') + '" onclick="' + (affordable ? 'window.HREngine.selectChannel(\'' + ch.id + '\')' : 'window.HRUI.toast(\'Insufficient budget\', \'error\')') + '">' +
+        '<div class="channel-card-icon">' + ch.icon + '</div>' +
+        '<div class="channel-card-name">' + ch.name + '</div>' +
+        '<div class="channel-card-desc">' + ch.desc + '</div>' +
+        '<div class="channel-stats">' +
+          '<div class="ch-stat"><div class="ch-stat-lbl">Cost</div><div class="ch-stat-val">₹' + (ch.cost/1000).toFixed(0) + 'K</div></div>' +
+          '<div class="ch-stat"><div class="ch-stat-lbl">Time</div><div class="ch-stat-val">' + ch.weeks + ' wks</div></div>' +
+          '<div class="ch-stat"><div class="ch-stat-lbl">Reach</div><div class="ch-stat-val" style="font-size:0.78rem">' + ch.reach + '</div></div>' +
+          '<div class="ch-stat"><div class="ch-stat-lbl">Quality</div><div class="ch-stat-val" style="font-size:0.78rem">' + ch.quality + '</div></div>' +
+        '</div>' +
+        '<div class="channel-pros-cons mt-1">' +
+          ch.pros.map(function(p) { return '<div class="pro">✓ ' + p + '</div>'; }).join('') +
+          ch.cons.map(function(c) { return '<div class="con">✗ ' + c + '</div>'; }).join('') +
+        '</div>' +
+        (selected === ch.id ? '<div class="text-center mt-2 font-bold c-success" style="font-size:0.82rem">✓ Channel Selected — ' + s.applications + ' applications received</div>' : '') +
+        (!affordable ? '<div class="text-center mt-2 c-danger text-xs font-bold">Insufficient budget</div>' : '') +
+      '</div>';
+    }).join('');
+
+    cont.innerHTML =
+      '<div class="phase-intro anim-fadeup" style="background:linear-gradient(135deg,#065f46,#059669)">' +
+        '<div class="phase-intro-num">Phase 5 — Recruitment</div>' +
+        '<div class="phase-intro-title">Choose Your Channel</div>' +
+        '<div class="phase-intro-desc">Different recruitment channels reach different talent pools. Each has unique trade-offs in cost, speed, candidate quality, and culture fit.</div>' +
+      '</div>' +
+
+      '<div class="grid-2 anim-fadeup-2">' + cards + '</div>' +
+
+      '<div class="insight-box anim-fadeup-3">' +
+        '<div class="insight-label">📘 Recruitment Theory</div>' +
+        '<div class="insight-text">Recruitment is the process of identifying and attracting potential candidates. The choice of channel affects the <strong>quantity, quality, cost, and diversity</strong> of the candidate pool. Poor channel selection can lead to either too few candidates or high screening effort.</div>' +
+      '</div>';
+  },
+
+  // ══════════════════════════════════════════════════════
+  // PHASE 6 — Candidate Selection
+  // ══════════════════════════════════════════════════════
+  renderPhase6: function(cont) {
+    var s = window.HRState;
+    this.setObjective('Review candidates and select the best fit for your open positions.');
+
+    if (!s.recruitmentChannel || s.candidatePool.length === 0) {
+      cont.innerHTML = '<div class="panel"><div class="panel-title">No candidates yet</div><p class="c-muted">Go back to Recruitment and select a channel first.</p><button class="btn btn-primary mt-2" onclick="window.HREngine.advancePhase(5)">← Go to Recruitment</button></div>';
+      return;
+    }
+
+    // Interview method selection if not chosen
+    var interviewSection = '';
+    if (!s.interviewMethod) {
+      var methods = [
+        { id: 'technical', icon: '💻', label: 'Technical Assessment', desc: 'Coding tests, problem-solving. Best for technical roles. High accuracy (90%).', time: '1 week' },
+        { id: 'behavioral', icon: '🧠', label: 'Behavioral Interview', desc: 'Situation-based questions. Good for culture fit. Moderate accuracy (75%).', time: '1 week' },
+        { id: 'structured', icon: '📋', label: 'Structured Interview', desc: 'Standardized questions. Reduces bias. Good balance (85%).', time: '1.5 weeks' },
+        { id: 'panel', icon: '👥', label: 'Panel Interview', desc: 'Multiple interviewers. Highest accuracy (92%) but time-heavy.', time: '2 weeks' }
+      ];
+      interviewSection = '<div class="panel anim-fadeup">' +
+        '<div class="panel-header"><div class="panel-title">🎙️ Choose Interview Method</div><div class="panel-subtitle">You have ' + s.candidatePool.length + ' candidates and limited time. Which method will you use?</div></div>' +
+        '<div class="grid-2">' +
+          methods.map(function(m) {
+            return '<div class="card card-interactive" onclick="window.HREngine.selectInterviewMethod(\'' + m.id + '\'); window.HRUI.renderPhase(6);">' +
+              '<div style="font-size:1.5rem">' + m.icon + '</div>' +
+              '<div class="font-bold mt-1">' + m.label + '</div>' +
+              '<div class="text-sm c-muted mt-1">' + m.desc + '</div>' +
+              '<div class="text-xs c-warning mt-1">⏱ ' + m.time + '</div>' +
+            '</div>';
+          }).join('') +
+        '</div>' +
+      '</div>';
+    }
+
+    // Funnel visualization
+    var channel = s.recruitmentChannel;
+    var funnelData = {
+      network:  { short: Math.round(s.applications * 0.004), assessed: 12, interviewed: 6 },
+      college:  { short: Math.round(s.applications * 0.02),  assessed: 15, interviewed: 8 },
+      referral: { short: Math.round(s.applications * 0.05),  assessed: 8,  interviewed: 5 },
+      agency:   { short: s.applications, assessed: Math.round(s.applications * 0.8), interviewed: Math.round(s.applications * 0.6) }
+    };
+    var fd = funnelData[channel] || { short: 10, assessed: 6, interviewed: s.candidatePool.length };
+
+    var funnelHtml = '<div class="funnel-chart">' +
+      '<div class="funnel-row"><span class="funnel-row-label">Applications</span><div class="funnel-bar-track"><div class="funnel-bar-fill" style="width:100%">' + s.applications + '</div></div><span class="funnel-row-count">' + s.applications + '</span></div>' +
+      '<div class="funnel-row"><span class="funnel-row-label">Shortlisted</span><div class="funnel-bar-track"><div class="funnel-bar-fill" style="width:' + Math.min(100, Math.round(fd.short/s.applications*100)) + '%; background:var(--teal)">' + fd.short + '</div></div><span class="funnel-row-count">' + fd.short + '</span></div>' +
+      '<div class="funnel-row"><span class="funnel-row-label">Assessed</span><div class="funnel-bar-track"><div class="funnel-bar-fill" style="width:' + Math.min(100, Math.round(fd.assessed/s.applications*100)) + '%; background:var(--amber)">' + fd.assessed + '</div></div><span class="funnel-row-count">' + fd.assessed + '</span></div>' +
+      '<div class="funnel-row"><span class="funnel-row-label">Interviewed</span><div class="funnel-bar-track"><div class="funnel-bar-fill" style="width:' + Math.min(100, Math.round(fd.interviewed/s.applications*100)) + '%; background:var(--violet)">' + fd.interviewed + '</div></div><span class="funnel-row-count">' + fd.interviewed + '</span></div>' +
+      '<div class="funnel-row"><span class="funnel-row-label">Final Pool</span><div class="funnel-bar-track"><div class="funnel-bar-fill" style="width:' + Math.min(100, Math.round(s.candidatePool.length/s.applications*100)) + '%; background:var(--emerald)">' + s.candidatePool.length + '</div></div><span class="funnel-row-count">' + s.candidatePool.length + '</span></div>' +
+    '</div>';
+
+    // Candidate cards
+    var candCards = s.candidatePool.map(function(cand) {
+      var isHired = s.hiredCandidates.find(function(h) { return h.id === cand.id; });
+      var growthColor = { 'VERY HIGH':'#059669', 'HIGH':'#0d9488', 'MEDIUM':'#d97706', 'LOW':'#dc2626' }[cand.growthPotential] || '#94a3b8';
+      var riskColor   = { 'LOW':'c-success', 'MEDIUM':'c-warning', 'HIGH':'c-danger', 'VERY HIGH':'c-danger' }[cand.risk] || 'c-muted';
+      var badges = '';
+      if (cand.assessment >= 88) badges += '<span class="cand-badge badge-high-skill">High Skill</span>';
+      if (cand.cultureFit >= 85)  badges += '<span class="cand-badge badge-high-fit">Culture Fit</span>';
+      if (cand.growthPotential === 'VERY HIGH') badges += '<span class="cand-badge badge-high-grow">High Growth</span>';
+      if (cand.experience >= 5) badges += '<span class="cand-badge badge-high-exp">Senior</span>';
+      if (cand.expectedSalary >= 180000) badges += '<span class="cand-badge badge-costly">High Cost</span>';
+      if (cand.risk === 'HIGH' || cand.risk === 'VERY HIGH') badges += '<span class="cand-badge badge-risk">Retention Risk</span>';
+
+      return '<div class="candidate-card ' + (isHired ? 'hired' : '') + '" onclick="window.HRUI.showCandidateProfile(\'' + cand.id + '\')">' +
+        (isHired ? '<div class="hired-overlay">✓ HIRED</div>' : '') +
+        '<div class="cand-name">' + cand.name + '</div>' +
+        '<div class="cand-meta">Exp: ' + cand.experience + ' yrs · Assessment: <strong>' + cand.assessment + '/100</strong> · Salary: ₹' + (cand.expectedSalary/1000).toFixed(0) + 'K/mo</div>' +
+        window.HRUI.skillBar('Python', cand.python) +
+        window.HRUI.skillBar('ML', cand.ml) +
+        window.HRUI.skillBar('Cloud', cand.cloud) +
+        window.HRUI.skillBar('AI', cand.ai) +
+        '<div class="cand-badges">' + badges + '</div>' +
+        '<div class="text-xs mt-1" style="color:' + growthColor + '">Growth: ' + cand.growthPotential + '</div>' +
+        '<div class="text-xs ' + riskColor + '">Retention Risk: ' + cand.risk + ' · Notice: ' + (cand.noticePeriod === 0 ? 'Immediate' : cand.noticePeriod + ' days') + '</div>' +
+      '</div>';
+    }).join('');
+
+    cont.innerHTML =
+      interviewSection +
+      '<div class="panel anim-fadeup">' +
+        '<div class="panel-header"><div><div class="panel-title">📊 Recruitment Funnel</div><div class="panel-subtitle">' + s.applications.toLocaleString('en-IN') + ' total applications via ' + channel.toUpperCase() + '</div></div>' +
+          (s.interviewMethod ? '<div class="panel-badge badge-teal">Method: ' + window.HREngine.interviewConfig[s.interviewMethod].label + '</div>' : '') +
+        '</div>' +
+        funnelHtml +
+      '</div>' +
+
+      '<div class="panel anim-fadeup-2">' +
+        '<div class="panel-header">' +
+          '<div><div class="panel-title">👥 Final Candidate Pool</div><div class="panel-subtitle">Hired: ' + s.hiredCandidates.length + ' / ' + s.candidatePool.length + ' available. Click a candidate to see full profile and hire.</div></div>' +
+        '</div>' +
+        '<div class="grid-2">' + candCards + '</div>' +
+      '</div>' +
+
+      '<div class="insight-box anim-fadeup-3">' +
+        '<div class="insight-label">📘 Selection Theory</div>' +
+        '<div class="insight-text">Effective candidate selection balances <strong>technical skill, culture fit, growth potential, cost, and risk</strong>. A high-skill candidate with low culture fit may underperform. A fresh graduate with high potential may outperform an expensive senior hire in the long run.</div>' +
+      '</div>' +
+
+      (s.hiredCandidates.length > 0 ?
+        '<div class="text-center mt-2"><button class="btn btn-navy btn-lg" onclick="window.HREngine.advancePhase(7)">Proceed to Training & Development →</button></div>'
+      : '');
+
+    this.animateSkillBars(cont);
+  },
+
+  // ══════════════════════════════════════════════════════
+  // PHASE 7 — Training & Development
+  // ══════════════════════════════════════════════════════
+  renderPhase7: function(cont) {
+    var s = window.HRState;
+    this.setObjective('Design training programs for your existing employees to develop their skills.');
+
+    var programs = window.HRScenarios.trainingPrograms;
+
+    var empSection = s.employees.map(function(emp) {
+      var trained = s.trainedEmployees.filter(function(t) { return t.empId === emp.id; });
+      var trainedNames = trained.map(function(t) { return t.programId; });
+
+      var eligiblePrograms = programs.filter(function(p) {
+        return !trainedNames.includes(p.id) && (!p.eligibility || p.eligibility(emp));
+      });
+
+      var programBtns = eligiblePrograms.map(function(p) {
+        var canAfford = s.budget >= p.cost;
+        return '<button class="btn btn-sm ' + (canAfford ? 'btn-teal' : 'btn-ghost') + '" ' +
+          'onclick="window.HRUI.confirmTraining(\'' + emp.id + '\',\'' + p.id + '\')" ' +
+          'title="Cost: ₹' + p.cost.toLocaleString('en-IN') + ' | ' + p.weeks + ' weeks">' +
+          p.icon + ' ' + p.name +
+        '</button>';
+      }).join('');
+
+      var trainedBadges = trained.map(function(t) {
+        return '<div class="text-xs c-success font-semibold">' + t.icon + ' ' + t.programName + ': ' + t.skill + ' ' + t.before + ' → ' + t.after + ' (+' + t.gain + ')</div>';
+      }).join('');
+
+      return '<div class="card anim-fadeup">' +
+        '<div class="flex-between mb-1">' +
+          '<div><div class="font-bold">' + emp.name + '</div><div class="text-sm c-muted">' + emp.role + ' · LP: ' + Math.round((emp.learningPotential || 0.7) * 100) + '% potential</div></div>' +
+        '</div>' +
+        window.HRUI.skillBar('Python', emp.python) +
+        window.HRUI.skillBar('ML', emp.ml) +
+        window.HRUI.skillBar('Cloud', emp.cloud) +
+        window.HRUI.skillBar('AI', emp.ai) +
+        (trainedBadges ? '<div style="margin:8px 0;">' + trainedBadges + '</div>' : '') +
+        (eligiblePrograms.length > 0 ? '<div class="btn-group mt-2">' + programBtns + '</div>' : '<div class="text-xs c-muted mt-2">No eligible programs available</div>') +
+      '</div>';
+    }).join('');
+
+    var programCards = programs.map(function(p) {
+      return '<div class="training-card">' +
+        '<div class="training-card-icon">' + p.icon + '</div>' +
+        '<div class="training-card-name">' + p.name + '</div>' +
+        '<div class="text-sm c-muted">' + p.desc + '</div>' +
+        '<div class="training-card-meta">' +
+          '<div class="training-meta-row"><span class="meta-lbl">Cost</span><span class="meta-val">₹' + (p.cost/1000).toFixed(0) + 'K</span></div>' +
+          '<div class="training-meta-row"><span class="meta-lbl">Duration</span><span class="meta-val">' + p.weeks + ' weeks</span></div>' +
+          '<div class="training-meta-row"><span class="meta-lbl">Morale Boost</span><span class="meta-val c-success">+' + p.moraleBoost + '%</span></div>' +
+        '</div>' +
+        '<div class="training-card-gain">Expected gain: +' + p.skillGain.min + ' to +' + p.skillGain.max + ' in ' + p.skillGain.skill.toUpperCase() + '</div>' +
+      '</div>';
+    }).join('');
+
+    cont.innerHTML =
+      '<div class="phase-intro anim-fadeup" style="background:linear-gradient(135deg,#1e3a5f,#0d9488)">' +
+        '<div class="phase-intro-num">Phase 7 — Training & Development</div>' +
+        '<div class="phase-intro-title">Develop Your Team</div>' +
+        '<div class="phase-intro-desc"><strong>Training</strong> improves current job skills. <strong>Development</strong> prepares employees for future responsibilities. Both are essential for sustainable workforce capability.</div>' +
+      '</div>' +
+
+      '<div class="grid-2">' +
+        '<div><div class="section-title">Available Training Programs</div><div style="display:flex; flex-direction:column; gap:12px;">' + programCards + '</div></div>' +
+        '<div><div class="section-title">Your Team</div><div style="display:flex; flex-direction:column; gap:12px;">' + empSection + '</div></div>' +
+      '</div>' +
+
+      '<div class="insight-box success-insight anim-fadeup-3">' +
+        '<div class="insight-label">📘 Training vs Development</div>' +
+        '<div class="insight-text"><strong>Training</strong> focuses on current role performance (e.g., cloud skills for an existing engineer). <strong>Development</strong> focuses on future potential (e.g., leadership for a future team lead). Both must be measured by outcomes, not just completion.</div>' +
+      '</div>' +
+
+      '<div class="text-center mt-2">' +
+        '<button class="btn btn-primary btn-lg" onclick="window.HREngine.advancePhase(8)">Evaluate Training & Check Events →</button>' +
+      '</div>';
+
+    this.animateSkillBars(cont);
+  },
+
+  // ══════════════════════════════════════════════════════
+  // PHASE 8 — Training Evaluation (Kirkpatrick)
+  // ══════════════════════════════════════════════════════
+  renderPhase8: function(cont) {
+    var s = window.HRState;
+    this.setObjective('Evaluate the effectiveness of your training using the Kirkpatrick model.');
+
+    var trainedSection = '';
+    if (s.trainedEmployees.length > 0) {
+      trainedSection = s.trainedEmployees.map(function(t) {
+        var improvementPct = Math.round((t.gain / t.before) * 100);
+        var levelScores = {
+          level1: Math.round(70 + Math.random() * 25),
+          level2: t.after,
+          level3: Math.round(t.gain * 3.5),
+          level4: Math.min(100, Math.round(t.gain * 2.8))
+        };
+        return '<div class="card anim-fadeup" style="margin-bottom:16px">' +
+          '<div class="flex-between mb-2">' +
+            '<div><div class="font-bold">' + t.empName + '</div><div class="text-sm c-muted">' + t.icon + ' ' + t.programName + '</div></div>' +
+            '<div class="text-right"><div class="text-xs c-muted">Skill: ' + t.skill.toUpperCase() + '</div><div class="font-bold c-success">' + t.before + ' → ' + t.after + ' (+' + t.gain + ')</div></div>' +
+          '</div>' +
+          '<div class="kirkpatrick-grid">' +
+            '<div class="kp-level achieved">' +
+              '<div class="kp-num">Level 1</div>' +
+              '<div class="kp-label">Reaction</div>' +
+              '<div class="kp-desc">How did the learner feel?</div>' +
+              '<div class="kp-score c-success">' + levelScores.level1 + '%</div>' +
+            '</div>' +
+            '<div class="kp-level achieved">' +
+              '<div class="kp-num">Level 2</div>' +
+              '<div class="kp-label">Learning</div>' +
+              '<div class="kp-desc">New skill level achieved</div>' +
+              '<div class="kp-score c-success">' + levelScores.level2 + '/100</div>' +
+            '</div>' +
+            '<div class="kp-level ' + (t.gain >= 10 ? 'achieved' : 'active') + '">' +
+              '<div class="kp-num">Level 3</div>' +
+              '<div class="kp-label">Behavior</div>' +
+              '<div class="kp-desc">On-the-job performance change</div>' +
+              '<div class="kp-score ' + (t.gain >= 10 ? 'c-success' : 'c-warning') + '">+' + levelScores.level3 + '%</div>' +
+            '</div>' +
+            '<div class="kp-level ' + (t.gain >= 15 ? 'achieved' : 'active') + '">' +
+              '<div class="kp-num">Level 4</div>' +
+              '<div class="kp-label">Results</div>' +
+              '<div class="kp-desc">Business impact</div>' +
+              '<div class="kp-score ' + (t.gain >= 15 ? 'c-success' : 'c-warning') + '">+' + levelScores.level4 + '% readiness</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="insight-box success-insight mt-2">' +
+            '<div class="insight-label">Training Verdict</div>' +
+            '<div class="insight-text">' +
+              (t.gain >= 15 ? '✅ <strong>Highly Effective.</strong> The training produced meaningful, measurable skill improvement that will directly impact project performance.' :
+               t.gain >= 8  ? '⚠️ <strong>Moderately Effective.</strong> The training produced a solid improvement but fell slightly short of the maximum potential.' :
+               '❌ <strong>Below Expectation.</strong> The employee\'s learning potential limited the training outcome. Consider a different program or approach.') +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    } else {
+      trainedSection = '<div class="panel"><p class="c-muted">No training programs were completed in this simulation.</p></div>';
+    }
+
+    cont.innerHTML =
+      '<div class="phase-intro anim-fadeup" style="background:linear-gradient(135deg,#7c3aed,#4f46e5)">' +
+        '<div class="phase-intro-num">Phase 8 — Training Evaluation</div>' +
+        '<div class="phase-intro-title">Did Your Training Work?</div>' +
+        '<div class="phase-intro-desc">The Kirkpatrick Model measures training effectiveness at 4 levels: Reaction → Learning → Behavior → Results. Completion alone does not prove effectiveness.</div>' +
+      '</div>' +
+
+      trainedSection +
+
+      '<div class="insight-box anim-fadeup">' +
+        '<div class="insight-label">📘 Kirkpatrick Model</div>' +
+        '<div class="insight-text">Most organizations only measure Level 1 (satisfaction surveys) and Level 2 (test scores). True training ROI requires measuring <strong>Level 3 (behavior change on the job)</strong> and <strong>Level 4 (business impact)</strong>.</div>' +
+      '</div>' +
+
+      '<div class="text-center mt-2">' +
+        '<button class="btn btn-primary btn-lg" onclick="window.HREngine.advancePhase(9)">View Final HR Report →</button>' +
+      '</div>';
+  },
+
+  // ══════════════════════════════════════════════════════
+  // PHASE 9 — Final Report
+  // ══════════════════════════════════════════════════════
+  renderPhase9: function(cont) {
+    var s      = window.HRState;
+    var scores = window.HREngine.calculateFinalScores();
+    this.setObjective('Review your HR performance across all dimensions.');
+
+    var totalColor = scores.total >= 80 ? 'c-success' : scores.total >= 60 ? 'c-warning' : 'c-danger';
+
+    var dimConfigs = [
+      { key: 'workforcePlanning',     label: 'Workforce Planning',     color: '#4f46e5' },
+      { key: 'recruitmentStrategy',   label: 'Recruitment Strategy',   color: '#0d9488' },
+      { key: 'selectionQuality',      label: 'Selection Quality',      color: '#059669' },
+      { key: 'trainingEffectiveness', label: 'Training Effectiveness', color: '#7c3aed' },
+      { key: 'budgetManagement',      label: 'Budget Management',      color: '#d97706' },
+      { key: 'timeManagement',        label: 'Time Management',        color: '#dc2626' },
+      { key: 'employeeWellbeing',     label: 'Employee Wellbeing',     color: '#06b6d4' },
+      { key: 'businessReadiness',     label: 'Business Readiness',     color: '#1e3a5f' }
+    ];
+
+    var scoreDims = dimConfigs.map(function(d) {
+      var val = scores[d.key] || 0;
+      return '<div class="score-dimension">' +
+        '<div class="score-dim-header">' +
+          '<span class="score-dim-label">' + d.label + '</span>' +
+          '<span class="score-dim-val" style="color:' + d.color + '">' + val + '</span>' +
+        '</div>' +
+        '<div class="score-dim-bar"><div class="score-dim-fill" style="width:' + val + '%; background:' + d.color + '"></div></div>' +
+      '</div>';
+    }).join('');
+
+    var badgeHtml = s.badges.map(function(b) {
+      return '<div class="achievement-badge earned">' +
+        '<div class="badge-icon">' + b.icon + '</div>' +
+        '<div class="badge-name">' + b.name + '</div>' +
+      '</div>';
+    }).join('') || '<p class="c-muted text-sm">No badges earned this run. Try a different strategy!</p>';
+
+    var decisionRows = s.decisions.map(function(d, i) {
+      return '<div class="decision-card anim-fadeup">' +
+        '<div class="decision-num">' + (i + 1) + '</div>' +
+        '<div class="decision-body">' +
+          '<div class="decision-title">' + d.phase + ': ' + d.action + '</div>' +
+          '<div class="decision-impact">' +
+            'Impact: <span class="font-semibold">' + d.impact + '</span>' +
+            (d.consequence ? '<br>Outcome: <span class="c-muted">' + d.consequence + '</span>' : '') +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    cont.innerHTML =
+      '<div class="phase-intro anim-fadeup">' +
+        '<div class="phase-intro-num">Phase 9 — Final HR Report</div>' +
+        '<div class="phase-intro-title">HR Performance Review</div>' +
+        '<div class="phase-intro-desc">Review your HR performance across all dimensions. This is your executive BI report for ' + s.scenario.name + '.</div>' +
+      '</div>' +
+
+      '<div class="panel anim-fadeup-2 text-center">' +
+        '<div class="section-title">TOTAL HR PERFORMANCE SCORE</div>' +
+        '<div style="font-size:5rem; font-weight:800; line-height:1" class="' + totalColor + '">' + scores.total + '</div>' +
+        '<div class="text-sm c-muted">out of 100</div>' +
+        '<div class="mt-2 text-sm">' + (scores.total >= 80 ? '🏆 Excellent strategic HR leadership!' : scores.total >= 60 ? '👍 Solid HR performance with room to improve.' : '📚 Learning opportunity — try a different strategy.') + '</div>' +
+      '</div>' +
+
+      '<div class="panel anim-fadeup-2">' +
+        '<div class="panel-header"><div class="panel-title">Performance Dimensions</div></div>' +
+        '<div class="grid-2">' + scoreDims + '</div>' +
+      '</div>' +
+
+      '<div class="panel anim-fadeup-3">' +
+        '<div class="panel-header"><div class="panel-title">🏅 Badges Earned</div></div>' +
+        '<div class="achievement-grid">' + badgeHtml + '</div>' +
+      '</div>' +
+
+      '<div class="panel anim-fadeup-3">' +
+        '<div class="panel-header"><div class="panel-title">Decision Review</div><div class="panel-subtitle">See how each decision shaped your outcome</div></div>' +
+        '<div style="display:flex; flex-direction:column; gap:12px;">' + decisionRows + '</div>' +
+      '</div>' +
+
+      '<div class="panel anim-fadeup-4">' +
+        '<div class="panel-header"><div class="panel-title">📘 What You Just Managed</div></div>' +
+        '<div style="display:flex; flex-direction:column; align-items:center; gap:6px; padding:16px 0;">' +
+          ['Business Requirement', 'Workforce Planning', 'Gap Analysis', 'HR Strategy', 'Recruitment', 'Selection', 'Training & Development', 'Performance Evaluation', 'Business Outcome'].map(function(step, i) {
+            return '<div class="font-semibold c-accent">' + step + '</div>' + (i < 8 ? '<div class="c-muted" style="font-size:1.2rem">↓</div>' : '');
+          }).join('') +
+        '</div>' +
+        '<div class="grid-2 mt-2">' +
+          '<div class="insight-box">' +
+            '<div class="insight-label">Key HR Concepts</div>' +
+            '<div class="insight-text"><strong>HRP:</strong> Matching workforce supply with business demand.<br><strong>Recruitment:</strong> Attracting the right talent through the right channels.<br><strong>Selection:</strong> Choosing candidates who balance skill, fit, and growth.<br><strong>Training:</strong> Improving current employee capability.<br><strong>Development:</strong> Preparing employees for future roles.</div>' +
+          '</div>' +
+          '<div class="insight-box success-insight">' +
+            '<div class="insight-label">Business Intelligence Role</div>' +
+            '<div class="insight-text">BI supports HR by answering: <em>How many? What skills? Which channel? Who to hire? Did training work?</em><br><br>Data-driven HR decisions reduce costs, improve quality, and accelerate project readiness.</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="panel anim-fadeup-4 text-center" style="background:var(--navy); color:white;">' +
+        '<div style="font-size:1.2rem; font-weight:700; margin-bottom:16px;">What would you do differently?</div>' +
+        '<div class="btn-group" style="justify-content:center; flex-wrap:wrap">' +
+          '<button class="btn btn-teal btn-lg" onclick="window.HRApp.reset()">↩ Restart</button>' +
+          '<button class="btn btn-outline" style="color:white; border-color:rgba(255,255,255,0.3)" onclick="window.HRApp.replayDifferent()">🎲 Try Different Strategy</button>' +
+        '</div>' +
+      '</div>';
+  },
+
+  // ══════════════════════════════════════════════════════
+  // EMPLOYEE PROFILE MODAL
+  // ══════════════════════════════════════════════════════
+  showEmployeeProfile: function(empId) {
+    var s   = window.HRState;
+    var emp = s.employees.find(function(e) { return e.id === empId; });
+    if (!emp) return;
+
+    var trained = s.trainedEmployees.filter(function(t) { return t.empId === empId; });
+    var trainedHtml = trained.length > 0 ? trained.map(function(t) {
+      return '<div class="text-xs c-success font-bold">' + t.icon + ' ' + t.programName + ': ' + t.skill + ' +' + t.gain + '</div>';
+    }).join('') : '<div class="text-xs c-muted">No training completed yet</div>';
+
+    this.showModal(
+      '<div class="modal-title">' + emp.name + '</div>' +
+      '<div class="modal-sub">' + emp.role + ' · ' + emp.dept + ' · ' + emp.experience + ' years experience</div>' +
+      '<div class="modal-divider"></div>' +
+      '<div class="grid-2 mb-2">' +
+        '<div><div class="text-xs c-muted font-bold mb-1">RETENTION RISK</div><div class="font-bold ' + ({'LOW':'c-success','MEDIUM':'c-warning','HIGH':'c-danger'}[emp.retentionRisk] || '') + '">' + emp.retentionRisk + '</div></div>' +
+        '<div><div class="text-xs c-muted font-bold mb-1">PROMOTION POTENTIAL</div><div class="font-bold c-accent">' + emp.promotionPotential + '</div></div>' +
+        '<div><div class="text-xs c-muted font-bold mb-1">PERFORMANCE</div><div class="font-bold">' + emp.performance + '/100</div></div>' +
+        '<div><div class="text-xs c-muted font-bold mb-1">LEARNING POTENTIAL</div><div class="font-bold c-info">' + Math.round((emp.learningPotential || 0.7) * 100) + '%</div></div>' +
+      '</div>' +
+      '<div class="section-title">Skills</div>' +
+      this.skillBar('Python', emp.python) + this.skillBar('ML', emp.ml) + this.skillBar('Cloud', emp.cloud) + this.skillBar('AI', emp.ai) +
+      '<div class="section-title mt-2">Training History</div>' +
+      trainedHtml +
+      '<div class="modal-divider"></div>' +
+      '<div style="text-align:center">' +
+        '<button class="btn btn-ghost" onclick="window.HRUI.closeModal()">Close</button>' +
+      '</div>'
+    );
+    this.animateSkillBars(document.getElementById('modal-box'));
+  },
+
+  // ══════════════════════════════════════════════════════
+  // CANDIDATE PROFILE MODAL
+  // ══════════════════════════════════════════════════════
+  showCandidateProfile: function(candId) {
+    var s    = window.HRState;
+    var cand = s.candidatePool.find(function(c) { return c.id === candId; });
+    if (!cand) return;
+
+    var isHired    = s.hiredCandidates.find(function(h) { return h.id === candId; });
+    var hireCost   = Math.round(cand.expectedSalary * 0.5) + 50000;
+    var canAfford  = s.budget >= hireCost;
+
+    this.showModal(
+      '<div class="modal-title">' + cand.name + '</div>' +
+      '<div class="modal-sub">Candidate ' + cand.id + ' · Exp: ' + cand.experience + ' yrs · Assessment: ' + cand.assessment + '/100</div>' +
+      '<div class="modal-divider"></div>' +
+      '<div class="grid-2 mb-2">' +
+        '<div><div class="text-xs c-muted font-bold mb-1">EXPECTED SALARY</div><div class="font-bold">₹' + (cand.expectedSalary/1000).toFixed(0) + 'K/month</div></div>' +
+        '<div><div class="text-xs c-muted font-bold mb-1">CULTURE FIT</div><div class="font-bold ' + (cand.cultureFit >= 80 ? 'c-success' : cand.cultureFit >= 60 ? 'c-warning' : 'c-danger') + '">' + cand.cultureFit + '%</div></div>' +
+        '<div><div class="text-xs c-muted font-bold mb-1">GROWTH POTENTIAL</div><div class="font-bold c-accent">' + cand.growthPotential + '</div></div>' +
+        '<div><div class="text-xs c-muted font-bold mb-1">RETENTION RISK</div><div class="font-bold ' + ({'LOW':'c-success','MEDIUM':'c-warning','HIGH':'c-danger','VERY HIGH':'c-danger'}[cand.risk] || '') + '">' + cand.risk + '</div></div>' +
+        '<div><div class="text-xs c-muted font-bold mb-1">NOTICE PERIOD</div><div class="font-bold">' + (cand.noticePeriod === 0 ? 'Immediate' : cand.noticePeriod + ' days') + '</div></div>' +
+        '<div><div class="text-xs c-muted font-bold mb-1">HIRE COST EST.</div><div class="font-bold">₹' + hireCost.toLocaleString('en-IN') + '</div></div>' +
+      '</div>' +
+      '<div class="section-title">Skills</div>' +
+      this.skillBar('Python', cand.python) + this.skillBar('ML', cand.ml) + this.skillBar('Cloud', cand.cloud) + this.skillBar('AI', cand.ai) +
+      '<div class="insight-box mt-2">' +
+        '<div class="insight-label">HR Analysis</div>' +
+        '<div class="insight-text"><strong>Strength:</strong> ' + (cand.strength || 'Good overall profile') + '<br><strong>Watch out for:</strong> ' + (cand.weakness || 'No significant concerns') + '</div>' +
+      '</div>' +
+      '<div class="modal-divider"></div>' +
+      '<div style="text-align:center; display:flex; gap:12px; justify-content:center">' +
+        (isHired ? '<div class="font-bold c-success">✓ Already Hired</div>' :
+          (canAfford ?
+            '<button class="btn btn-success btn-lg" onclick="var r=window.HREngine.hireCandidate(\'' + cand.id + '\'); if(r){window.HRUI.closeModal(); window.HRUI.toast(\'' + cand.name + ' hired! +' + (r.moraleEffect >= 0 ? '+' : '') + r.moraleEffect + '% morale\', \'success\');} window.HRUI.renderPhase(6);">✓ Hire ' + cand.name.split(' ')[0] + '</button>' :
+            '<div class="c-danger font-bold">Insufficient budget</div>'
+          )
+        ) +
+        '<button class="btn btn-ghost" onclick="window.HRUI.closeModal()">Close</button>' +
+      '</div>'
+    );
+    this.animateSkillBars(document.getElementById('modal-box'));
+  },
+
+  // ══════════════════════════════════════════════════════
+  // TRAINING CONFIRM MODAL
+  // ══════════════════════════════════════════════════════
+  confirmTraining: function(empId, programId) {
+    var s    = window.HRState;
+    var emp  = s.employees.find(function(e) { return e.id === empId; });
+    var prog = window.HRScenarios.trainingPrograms.find(function(p) { return p.id === programId; });
+    if (!emp || !prog) return;
+
+    var expectedGainMin = Math.round(prog.skillGain.min * (emp.learningPotential || 0.7));
+    var expectedGainMax = Math.round(prog.skillGain.max * (emp.learningPotential || 0.7));
+
+    this.showModal(
+      '<div class="modal-title">' + prog.icon + ' ' + prog.name + '</div>' +
+      '<div class="modal-sub">Enrolling: ' + emp.name + '</div>' +
+      '<div class="modal-divider"></div>' +
+      '<div class="grid-2 mb-2">' +
+        '<div><div class="text-xs c-muted font-bold mb-1">COST</div><div class="font-bold c-warning">₹' + prog.cost.toLocaleString('en-IN') + '</div></div>' +
+        '<div><div class="text-xs c-muted font-bold mb-1">DURATION</div><div class="font-bold">' + prog.weeks + ' weeks</div></div>' +
+        '<div><div class="text-xs c-muted font-bold mb-1">EXPECTED SKILL GAIN</div><div class="font-bold c-success">+' + expectedGainMin + ' to +' + expectedGainMax + '</div></div>' +
+        '<div><div class="text-xs c-muted font-bold mb-1">MORALE BOOST</div><div class="font-bold c-success">+' + prog.moraleBoost + '%</div></div>' +
+      '</div>' +
+      '<div class="insight-box warn-insight mb-2">' +
+        '<div class="insight-label">Note</div>' +
+        '<div class="insight-text">Actual skill gain depends on ' + emp.name.split(' ')[0] + '\'s learning potential (' + Math.round((emp.learningPotential || 0.7) * 100) + '%). The outcome will vary.</div>' +
+      '</div>' +
+      '<div style="display:flex; gap:12px; justify-content:center">' +
+        '<button class="btn btn-primary" onclick="var r=window.HREngine.startTraining(\'' + empId + '\',\'' + programId + '\'); if(r){window.HRUI.closeModal(); window.HRUI.toast(\'' + emp.name + ' completed ' + prog.name + '! Skill: +\'+r.gain, \'success\'); window.HRUI.renderPhase(7);}">Confirm Training</button>' +
+        '<button class="btn btn-ghost" onclick="window.HRUI.closeModal()">Cancel</button>' +
+      '</div>'
+    );
+  }
 };
