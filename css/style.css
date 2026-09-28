@@ -1,38 +1,38 @@
 :root {
-    --bg-color: #eef2f6;
-    --panel-bg: #eef2f6;
+    --bg-color: #0f172a; /* Slate 900 */
+    --panel-bg: #1e293b; /* Slate 800 */
     
-    --primary: #10b981; /* Green from the reference toggle */
+    --primary: #10b981; 
     --primary-glow: rgba(16, 185, 129, 0.4);
-    --secondary: #6366f1; /* Indigo */
+    --secondary: #38bdf8; /* Sky blue for contrast */
     --success: #10b981;
     --warning: #f59e0b;
     --danger: #ef4444;
     
-    --text-main: #334155;
+    --text-main: #f8fafc;
     --text-muted: #94a3b8;
     
     --clay-radius: 24px;
     --clay-radius-sm: 16px;
     
-    /* Claymorphism shadows */
+    /* Claymorphism shadows optimized for dark mode (Projector friendly) */
     --clay-shadow: 
-        10px 10px 24px rgba(170, 182, 200, 0.5), 
-        inset -4px -4px 10px rgba(170, 182, 200, 0.25), 
-        inset 4px 4px 10px rgba(255, 255, 255, 1);
+        10px 10px 24px rgba(0, 0, 0, 0.6), 
+        inset -4px -4px 10px rgba(0, 0, 0, 0.4), 
+        inset 4px 4px 10px rgba(255, 255, 255, 0.08);
         
     --clay-shadow-hover: 
-        12px 12px 28px rgba(170, 182, 200, 0.6), 
-        inset -4px -4px 10px rgba(170, 182, 200, 0.25), 
-        inset 4px 4px 10px rgba(255, 255, 255, 1);
+        12px 12px 28px rgba(0, 0, 0, 0.7), 
+        inset -4px -4px 10px rgba(0, 0, 0, 0.4), 
+        inset 4px 4px 10px rgba(255, 255, 255, 0.1);
         
     --clay-shadow-active: 
-        inset 6px 6px 14px rgba(170, 182, 200, 0.5), 
-        inset -6px -6px 14px rgba(255, 255, 255, 1);
+        inset 6px 6px 14px rgba(0, 0, 0, 0.6), 
+        inset -6px -6px 14px rgba(255, 255, 255, 0.05);
         
     --clay-shadow-flat: 
-        inset 2px 2px 5px rgba(170, 182, 200, 0.3), 
-        inset -2px -2px 5px rgba(255, 255, 255, 1);
+        inset 2px 2px 5px rgba(0, 0, 0, 0.5), 
+        inset -2px -2px 5px rgba(255, 255, 255, 0.05);
         
     --font-stack: 'Inter', 'Segoe UI', Roboto, Arial, sans-serif;
 }
@@ -106,20 +106,20 @@ p { margin-bottom: 1rem; line-height: 1.6; }
     color: #fff;
     /* Special clay shadow for primary colored button */
     box-shadow: 
-        10px 10px 24px rgba(16, 185, 129, 0.3), 
-        inset -4px -4px 10px rgba(0, 0, 0, 0.1), 
-        inset 4px 4px 10px rgba(255, 255, 255, 0.4);
+        10px 10px 24px rgba(0, 0, 0, 0.4), 
+        inset -4px -4px 10px rgba(0, 0, 0, 0.2), 
+        inset 4px 4px 10px rgba(255, 255, 255, 0.2);
 }
 .btn.primary:hover:not(:disabled) {
     box-shadow: 
-        12px 12px 28px rgba(16, 185, 129, 0.4), 
-        inset -4px -4px 10px rgba(0, 0, 0, 0.1), 
-        inset 4px 4px 10px rgba(255, 255, 255, 0.4);
+        12px 12px 28px rgba(0, 0, 0, 0.5), 
+        inset -4px -4px 10px rgba(0, 0, 0, 0.2), 
+        inset 4px 4px 10px rgba(255, 255, 255, 0.3);
 }
 .btn.primary:active:not(:disabled) {
     box-shadow: 
-        inset 6px 6px 14px rgba(0, 0, 0, 0.15), 
-        inset -6px -6px 14px rgba(255, 255, 255, 0.3);
+        inset 6px 6px 14px rgba(0, 0, 0, 0.3), 
+        inset -6px -6px 14px rgba(255, 255, 255, 0.1);
 }
 .btn.secondary { 
     color: var(--secondary); 

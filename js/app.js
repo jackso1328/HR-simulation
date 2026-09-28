@@ -53,6 +53,20 @@ window.HRApp = {
             document.getElementById("modal-overlay").classList.add("hidden");
         });
 
+        // Toggle Terminal
+        document.getElementById("btn-toggle-terminal").addEventListener("click", function(e) {
+            var term = document.getElementById("terminal");
+            term.classList.toggle("hidden");
+            var btn = e.currentTarget;
+            if (term.classList.contains("hidden")) {
+                btn.innerText = "💻 SHOW TERMINAL";
+                btn.classList.replace("secondary", "primary");
+            } else {
+                btn.innerText = "💻 HIDE TERMINAL";
+                btn.classList.replace("primary", "secondary");
+            }
+        });
+
         // Classroom mode toggle
         document.getElementById("btn-classroom-mode").addEventListener("click", function(e) {
             document.body.classList.toggle("classroom-mode");
@@ -96,6 +110,13 @@ window.HRApp = {
         var cmBtn = document.getElementById("btn-classroom-mode");
         cmBtn.innerText = "CLASSROOM MODE";
         cmBtn.classList.replace("primary", "secondary");
+
+        // Reset Terminal
+        var term = document.getElementById("terminal");
+        term.classList.remove("hidden");
+        var termBtn = document.getElementById("btn-toggle-terminal");
+        termBtn.innerText = "💻 HIDE TERMINAL";
+        termBtn.classList.replace("primary", "secondary");
 
         // Reset intro animation elements
         var notif = document.getElementById("intro-notification");
