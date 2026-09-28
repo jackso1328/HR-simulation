@@ -11,8 +11,11 @@ window.HRSim = {
     analyzeWorkforce: function() {
         window.HRState.workforceAnalyzed = true;
         window.HRState.stage = 2;
+        // Morale drop due to workforce shortage realization
+        window.HRState.morale = Math.max(0, window.HRState.morale - 10);
+        window.HRUI.updateTopBar();
         window.HRUI.renderCurrentStage();
-        window.HRUI.printToTerminal("Workforce analysis complete. Shortage detected.", "warning");
+        window.HRUI.printToTerminal("Workforce analysis complete. Shortage detected. Morale dropped.", "warning");
     },
 
     choosePlan: function(plan) {
@@ -69,13 +72,14 @@ window.HRSim = {
         state.budget -= cost;
         state.trainingCost += cost;
         state.trainedEmployees.push(empId);
+        state.morale = Math.min(100, state.morale + 5); // Morale boost
         state.decisions.push("Trained " + emp.name + " (" + empId + ")");
 
         // Increase Cloud skill by 35, max 100
         emp.cloud = Math.min(100, emp.cloud + 35);
 
         window.HRUI.updateTopBar();
-        window.HRUI.printToTerminal("Training started for " + emp.name + "...", "success");
+        window.HRUI.printToTerminal("Training started for " + emp.name + "... Morale increased.", "success");
 
         return { emp: emp, oldCloud: oldCloud, newCloud: emp.cloud };
     },
@@ -154,11 +158,12 @@ window.HRSim = {
         state.budget -= cost;
         state.recruitmentCost += cost;
         state.hiredCandidates.push(candId);
+        state.morale = Math.min(100, state.morale + 2); // Morale boost
         state.decisions.push("Hired Candidate " + candId);
         state.available.ai += 1;
 
         window.HRUI.updateTopBar();
-        window.HRUI.printToTerminal("Hired " + cand.name + " (Candidate " + candId + "). Budget remaining: ₹" + state.budget.toLocaleString('en-IN'), "success");
+        window.HRUI.printToTerminal("Hired " + cand.name + " (Candidate " + candId + "). Budget remaining: ₹" + state.budget.toLocaleString('en-IN') + ". Morale increased.", "success");
 
         // Update hired count display if present on page
         var hiredCountEl = document.getElementById("hired-count");

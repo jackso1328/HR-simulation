@@ -38,6 +38,8 @@ window.HRState = {
     planChosen: null, // 'recruit', 'train', 'combination'
     deadlineChanged: false,
 
+    morale: 85, // New feature: Employee Morale
+
     init: function() {
         // Deep copy data to state so we can modify it
         this.employees = JSON.parse(JSON.stringify(window.HRData.employees));
@@ -56,5 +58,6 @@ window.HRState = {
         this.workforceAnalyzed = false;
         this.planChosen = null;
         this.deadlineChanged = false;
+        this.morale = 85;
     }
 };

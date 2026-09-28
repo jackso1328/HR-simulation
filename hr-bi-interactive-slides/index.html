@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HR & BI Interactive Slides</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Fullscreen Toggle -->
+  <button class="fullscreen-btn" id="fsBtn" title="Toggle Fullscreen (F)">⛶</button>
+
+  <!-- Progress Bar -->
+  <div class="progress-container">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+  <div class="slide-counter" id="slideCounter">1 / 22</div>
+
+  <!-- Click Zones -->
+  <div class="click-zone-left" id="zoneLeft"></div>
+  <div class="click-zone-right" id="zoneRight"></div>
+
+  <!-- Deck Container -->
+  <div class="deck-container" id="deck">
+
+    <!-- Slide 1 -->
+    <section class="slide active center-content">
+      <h1>Human Resources, Training & Development:<br>The Business Intelligence Connection</h1>
+      <p class="subtitle">From Hiring to Data-Driven People Decisions</p>
+    </section>
+
+    <!-- Slide 2 -->
+    <section class="slide">
+      <h2>Why This Topic Matters to You</h2>
+      <div class="two-col">
+        <div>
+          <ul class="stagger-list">
+            <li>We're engineering students — most of us want to get placed after graduation</li>
+            <li>We usually think about the interview from the candidate's side</li>
+            <li>Today: the organization's side — what happens before that shortlist email</li>
+          </ul>
+        </div>
+        <div class="icon-box">
+          <!-- Mail icon representing job offer -->
+          <svg viewBox="0 0 24 24"><path d="M20 4H4C2.9 4 2.01 4.9 2.01 6L2 18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 18H4V8L12 13L20 8V18ZM12 11L4 6H20L12 11Z"/></svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 3 -->
+    <section class="slide center-content">
+      <h2>Today's Journey</h2>
+      <ul class="stagger-list" style="display:inline-block; text-align:left; font-size: 2.2rem;">
+        <li>Human Resources (HR)</li>
+        <li>Human Resource Planning</li>
+        <li>Recruitment</li>
+        <li>Training & Development</li>
+        <li>Connecting it all to Business Intelligence / Analytics</li>
+      </ul>
+    </section>
+
+    <!-- Slide 4 -->
+    <section class="slide">
+      <h2>What Is "Human Resources"?</h2>
+      <ul class="stagger-list">
+        <li>A resource = anything an org uses to create value (money, machines, data, technology)</li>
+        <li>Human Resources = people + their knowledge, skills, experience, and decision-making ability</li>
+        <li>Not just names in a spreadsheet — it's capability</li>
+      </ul>
+    </section>
+
+    <!-- Slide 5 -->
+    <section class="slide">
+      <h2>Resources Need People to Use Them</h2>
+      <div class="two-col">
+        <ul class="stagger-list">
+          <li>Best technology ≠ results, without people who know how to use it</li>
+          <li>Example: unlimited computing power given to students with no training in programming/analytics — useless on its own</li>
+          <li>Same logic applies to organizations</li>
+        </ul>
+        <div class="icon-box">
+          <!-- Server and User Icon -->
+          <svg viewBox="0 0 24 24" style="fill: var(--accent-secondary);"><path d="M19 15V19H5V15H19ZM20 13H4C3.45 13 3 13.45 3 14V20C3 20.55 3.45 21 4 21H20C20.55 21 21 20.55 21 20V14C21 13.45 20.55 13 20 13ZM19 5V9H5V5H19ZM20 3H4C3.45 3 3 3.45 3 4V10C3 10.55 3.45 11 4 11H20C20.55 11 21 10.55 21 10V4C21 3.45 20.55 3 20 3ZM12 6.5C12 5.67 11.33 5 10.5 5C9.67 5 9 5.67 9 6.5C9 7.33 9.67 8 10.5 8C11.33 8 12 7.33 12 6.5ZM12 16.5C12 15.67 11.33 15 10.5 15C9.67 15 9 15.67 9 16.5C9 17.33 9.67 18 10.5 18C11.33 18 12 17.33 12 16.5Z"/></svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 6 -->
+    <section class="slide">
+      <h2>Business Requirement → People Requirement</h2>
+      <ul class="stagger-list">
+        <li>Business decision: "We want to grow this business"</li>
+        <li>Immediate people question: What roles? How many? What skills?</li>
+        <li style="color: var(--accent-secondary); font-weight: 600;">Key line: HR connects the organization's business requirements with its people and capabilities</li>
+      </ul>
+    </section>
+
+    <!-- Slide 7 -->
+    <section class="slide">
+      <h2>What Is Human Resource Planning?</h2>
+      <ul class="stagger-list">
+        <li>Determines: how many employees, what capabilities, and when they're needed</li>
+        <li>"Planning before hiring"</li>
+        <li>Not just "we need more people" — needs structured analysis</li>
+      </ul>
+    </section>
+
+    <!-- Slide 8 -->
+    <section class="slide">
+      <h2>Case: DataTech's Expansion</h2>
+      <ul class="stagger-list">
+        <li>DataTech: 1,000 employees → expanding BI business next year</li>
+        <li>Forecasted need: 1,300 employees</li>
+        <li>100 moved internally + 50 trained internally = only 150 need external hiring</li>
+      </ul>
+    </section>
+
+    <!-- Slide 9 -->
+    <section class="slide">
+      <h2>The Workforce Gap Formula</h2>
+      <div class="two-col">
+        <div>
+          <ul class="stagger-list">
+            <li>Reverse case: 900 needed, 1,000 available = 100 surplus → redeployment, not layoffs</li>
+          </ul>
+        </div>
+        <div class="gap-formula">
+          <div class="formula-row reveal-item">
+            <span>Expected requirement:</span>
+            <span class="count-up" data-target="1000">0</span>
+          </div>
+          <div class="formula-row reveal-item">
+            <span>Available/suitable:</span>
+            <span>- <span class="count-up" data-target="850">0</span></span>
+          </div>
+          <div class="formula-row formula-result reveal-item">
+            <span>Gap (Shortage):</span>
+            <span>150</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 10 -->
+    <section class="slide">
+      <h2>Quantity Isn't Enough</h2>
+      <ul class="stagger-list">
+        <li>"500 employees" tells us nothing without knowing the type</li>
+        <li>100 data analysts hired without SQL/statistics skills = skills gap</li>
+        <li>Two fixes: Recruit people who have the skill, or Train people to build it</li>
+      </ul>
+    </section>
+
+    <!-- Slide 11 -->
+    <section class="slide">
+      <h2>Planning in the Real World</h2>
+      <div class="two-col">
+        <ul class="stagger-list">
+          <li>Seasonal scaling: e-commerce/logistics hiring surges before festive season</li>
+          <li>IT services "bench" model: trained staff kept ready for new client contracts</li>
+        </ul>
+        <div class="icon-box">
+          <svg viewBox="0 0 24 24"><path d="M20 8H17V4H7V8H4C2.9 8 2.01 8.9 2.01 10L2 20C2 21.1 2.9 22 4 22H20C21.1 22 22 21.1 22 20V10C22 8.9 21.1 8 20 8ZM9 6H15V8H9V6ZM20 20H4V10H20V20ZM12 17L17 12H14V11H10V12H7L12 17Z"/></svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 12 -->
+    <section class="slide">
+      <h2>Recruitment vs. Selection</h2>
+      <ul class="stagger-list">
+        <li><strong>Recruitment</strong> = attracting candidates into the process</li>
+        <li><strong>Selection</strong> = evaluating and choosing among them</li>
+        <li>10,000 applicants → attracted (recruitment); 30 offers → chosen (selection)</li>
+      </ul>
+    </section>
+
+    <!-- Slide 13 -->
+    <section class="slide">
+      <h2>Internal vs. External Recruitment</h2>
+      <ul class="stagger-list">
+        <li><strong>Internal:</strong> promoting existing employees (already know culture & systems)</li>
+        <li><strong>External:</strong> careers websites, job portals, campus recruitment, referrals, agencies</li>
+        <li>Campus recruitment = most relevant channel for us</li>
+      </ul>
+    </section>
+
+    <!-- Slide 14 -->
+    <section class="slide">
+      <h2>The Recruitment Funnel (DataTech Example)</h2>
+      <div class="two-col">
+        <ul class="stagger-list">
+          <li>Every stage generates data</li>
+          <li>Different sources can have very different success rates → this is where analytics begins</li>
+        </ul>
+        <div class="funnel-container">
+          <div class="funnel-stage reveal-item">10,000 Applicants</div>
+          <div class="funnel-stage reveal-item">2,000 Screened</div>
+          <div class="funnel-stage reveal-item">500 Assessed</div>
+          <div class="funnel-stage reveal-item">100 Interviewed</div>
+          <div class="funnel-stage reveal-item">30 Offers</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 15 -->
+    <section class="slide">
+      <h2>Real Company: Amazon (BIE Hiring)</h2>
+      <ul class="stagger-list">
+        <li>Application → online assessment → (technical phone screen) → interview loop</li>
+        <li>Loop tests: SQL & scripting, analytical problem-solving, visualization, metrics/reporting, business requirements</li>
+        <li><strong>Lesson:</strong> the job defines the required skill; the skill defines the hiring test</li>
+      </ul>
+    </section>
+
+    <!-- Slide 16 -->
+    <section class="slide">
+      <h2>Real Company: Google (People Operations)</h2>
+      <ul class="stagger-list">
+        <li>HR at Google = "People Operations," guided by a People Analytics team</li>
+        <li>Goal: bring engineering-level rigor to people decisions</li>
+        <li>Data-driven hiring: found 4 interviews capture most predictive value</li>
+        <li>"Project Janus": re-checked rejected resumes for missed strong candidates</li>
+      </ul>
+      <div class="analytics-animation">
+        <div class="people-group" id="peopleIcons">
+          <!-- JS will inject SVGs here -->
+        </div>
+        <div class="chart-container">
+          <svg class="chart-icon" viewBox="0 0 24 24"><path d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM9 17H7V10H9V17ZM13 17H11V7H13V17ZM17 17H15V13H17V17Z"/></svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 17 -->
+    <section class="slide">
+      <h2>Real Company: JPMorganChase</h2>
+      <ul class="stagger-list">
+        <li>Four-stage journey: Explore → Apply → Interview → Decision</li>
+        <li>Process varies by role — some roles use standardized/virtual assessments</li>
+        <li>Same theme: process design follows job requirements</li>
+      </ul>
+    </section>
+
+    <!-- Slide 18 -->
+    <section class="slide">
+      <h2>Careers Inside HR (Where BI Fits)</h2>
+      <ul class="stagger-list">
+        <li><strong>HR Business Partner</strong> — connects business goals to workforce decisions</li>
+        <li><strong>Recruiter/Talent Acquisition</strong> — manages and optimizes the funnel</li>
+        <li><strong>L&D Specialist</strong> — designs and measures training</li>
+        <li><strong>People Analyst / People Analytics</strong> — builds dashboards & models on hiring, attrition, engagement (a real, hiring job title today)</li>
+      </ul>
+    </section>
+
+    <!-- Slide 19 -->
+    <section class="slide">
+      <h2>Training vs. Development</h2>
+      <ul class="stagger-list">
+        <li><strong>Training</strong> = current-job oriented (e.g., learning the internal BI dashboard tool)</li>
+        <li><strong>Development</strong> = future-oriented (e.g., leadership coaching for a future team-lead role)</li>
+        <li>Both close a gap — just different time horizons</li>
+      </ul>
+    </section>
+
+    <!-- Slide 20 -->
+    <section class="slide">
+      <h2>The Training Process</h2>
+      <ul class="stagger-list" style="margin-bottom: 2rem;">
+        <li>Most orgs measure Reaction easily; Results rarely — a real measurement gap</li>
+      </ul>
+      <div class="two-col diagram-container">
+        <!-- ADDIE -->
+        <div>
+          <h3>ADDIE Model</h3>
+          <div class="addie-flow">
+            <div class="flow-step reveal-item">Analyze</div>
+            <div class="flow-step reveal-item">Design</div>
+            <div class="flow-step reveal-item">Develop/Deliver</div>
+            <div class="flow-step reveal-item">Evaluate</div>
+          </div>
+        </div>
+        <!-- Kirkpatrick -->
+        <div>
+          <h3>Kirkpatrick's 4 Levels</h3>
+          <div class="kirkpatrick-pyramid">
+            <div class="pyramid-level reveal-item">1. Reaction</div>
+            <div class="pyramid-level reveal-item">2. Learning</div>
+            <div class="pyramid-level reveal-item">3. Behavior</div>
+            <div class="pyramid-level reveal-item">4. Results</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 21 -->
+    <section class="slide">
+      <h2>Training & Development in the Real World</h2>
+      <div class="two-col">
+        <ul class="stagger-list">
+          <li>Amazon: large-scale upskilling investment for hundreds of thousands of employees</li>
+          <li>Retail/logistics "academy" programs preparing frontline staff for leadership roles</li>
+          <li>New system rollouts (ERP/BI tools) → structured certification training</li>
+        </ul>
+        <div class="icon-box">
+          <svg viewBox="0 0 24 24"><path d="M12 3L1 9L4 10.64V17C4 18.1 4.9 19 6 19H18C19.1 19 20 18.1 20 17V10.64L23 9L12 3ZM18 17H6V11.73L12 15L18 11.73V17ZM12 12.5L3.82 8L12 3.5L20.18 8L12 12.5Z"/></svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 22 -->
+    <section class="slide">
+      <h2>Closing: Where BI Meets HR</h2>
+      <ul class="stagger-list">
+        <li>Every stage — Planning, Recruitment, Training — generates data</li>
+        <li>Key metrics: time-to-hire, cost-per-hire, attrition rate, offer-acceptance rate, training ROI</li>
+        <li>Attrition prediction = same logic as customer-churn modeling, applied to employees</li>
+      </ul>
+      
+      <div class="loop-diagram">
+        <svg class="loop-svg" viewBox="0 0 400 400">
+          <circle cx="200" cy="200" r="160" class="loop-path reveal-item" />
+        </svg>
+        <div class="loop-node node-1 reveal-item">Business Goal</div>
+        <div class="loop-node node-2 reveal-item">HR Planning</div>
+        <div class="loop-node node-3 reveal-item">Recruitment</div>
+        <div class="loop-node node-4 reveal-item">Training</div>
+        <div class="loop-node node-5 reveal-item">Data & Analytics</div>
+      </div>
+      
+      <h3 class="reveal-item" style="text-align: center; margin-top: 1rem;">Thank You / Questions?</h3>
+    </section>
+
+  </div>
+
+  <!-- On-Screen Controls -->
+  <div class="controls">
+    <button class="nav-btn" id="prevBtn" title="Previous Slide (Left Arrow)">◀</button>
+    <button class="nav-btn" id="nextBtn" title="Next Slide (Right Arrow/Space)">▶</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

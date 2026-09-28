@@ -15,10 +15,16 @@ window.HRUI = {
         var budgetEl = document.getElementById("top-budget");
         var timeEl   = document.getElementById("top-time");
         var wfEl     = document.getElementById("top-workforce");
+        var moraleEl = document.getElementById("top-morale");
         if (!budgetEl || !timeEl || !wfEl) return;
 
         budgetEl.innerText = "\u20B9" + state.budget.toLocaleString('en-IN');
         timeEl.innerText   = state.currentDeadlineMonths + " Months";
+        
+        if (moraleEl) {
+            moraleEl.innerText = state.morale + "%";
+            moraleEl.style.color = state.morale >= 80 ? 'var(--success)' : state.morale >= 50 ? 'var(--warning)' : 'var(--danger)';
+        }
 
         var totalReq   = state.required.ai  + state.required.ml  + state.required.data;
         var totalAvail = state.available.ai + state.available.ml + state.available.data;
@@ -547,7 +553,7 @@ window.HRUI = {
               '<h1 style="text-align:center; color:var(--primary); letter-spacing:2px; margin-bottom:0.3rem">NOVATECH AI</h1>' +
               '<p style="text-align:center; color:var(--text-muted); letter-spacing:2px; margin-bottom:2rem; font-size:0.9rem">HR WORKFORCE INTELLIGENCE DASHBOARD</p>' +
 
-              '<div class="dashboard-grid">' +
+              '<div class="dashboard-grid" style="grid-template-columns: repeat(3, 1fr);">' +
                 '<div class="kpi-card">' +
                   '<div class="label">Workforce Coverage</div>' +
                   '<div class="value text-success">' + totalAvail + ' / ' + totalReq + '</div>' +
@@ -579,6 +585,10 @@ window.HRUI = {
                 '<div class="kpi-card">' +
                   '<div class="label">Deadline</div>' +
                   '<div class="value ' + (s.deadlineChanged ? 'text-danger' : 'text-success') + '">' + s.currentDeadlineMonths + ' Months</div>' +
+                '</div>' +
+                '<div class="kpi-card">' +
+                  '<div class="label">Employee Morale</div>' +
+                  '<div class="value" style="color:' + (s.morale >= 80 ? 'var(--success)' : s.morale >= 50 ? 'var(--warning)' : 'var(--danger)') + '">' + s.morale + '%</div>' +
                 '</div>' +
               '</div>' +
 
