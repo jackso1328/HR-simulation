@@ -441,3 +441,33 @@ body.classroom-mode .btn { font-size: 1.1rem; padding: 14px 28px; }
     font-weight: 600;
 }
 .funnel-stage span:first-child { color: var(--text-muted); }
+
+/* Mobile Responsiveness */
+@media (max-width: 850px) {
+    #top-bar { padding: 10px; height: auto; flex-wrap: wrap; gap: 10px; justify-content: center; }
+    .stat-box { padding: 5px 10px; }
+    .stat-box .value { font-size: 1rem; }
+    .stat-box .label { font-size: 0.6rem; }
+    h1.logo { font-size: 2rem; }
+    
+    #main-panel { padding: 1rem; }
+    .panel { padding: 1.5rem; }
+    
+    .grid-2, .grid-3 { grid-template-columns: 1fr !important; gap: 1rem; }
+    
+    #terminal { height: 250px; padding: 10px; }
+    .prompt { font-size: 1rem; }
+    #command-input { font-size: 0.95rem; }
+    
+    .dashboard-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 1rem; }
+    
+    #modal-content { padding: 1.5rem; }
+}
+
+@media (max-width: 480px) {
+    .dashboard-grid { grid-template-columns: 1fr !important; }
+    .stat-circle { width: 70px; height: 70px; }
+    .stat-circle .num { font-size: 1.4rem; }
+    .btn { width: 100%; margin-bottom: 5px; }
+}
+
