@@ -1,122 +1,97 @@
 /* ═══════════════════════════════════════════════════════════
-   APP.JS — Bootstrapper & lifecycle management
+   APP.JS — Bootstrapper & lifecycle (minimal UI edition)
 ═══════════════════════════════════════════════════════════ */
 window.HRApp = {
   selectedScenarioId: null,
-  selectedDifficulty: 'manager',
-  _bound: false,
+  selectedDifficulty: 'beginner',
+  _appBound: false,
 
   init: function() {
     this.buildScenarioPicker();
     this.showJourney();
     this.bindIntroEvents();
-
-    // Animate logo in
-    setTimeout(function() {
-      var logo = document.getElementById('intro-logo');
-      if (logo) { logo.classList.remove('hidden'); logo.classList.add('anim-fadeup'); }
-    }, 200);
-    setTimeout(function() {
-      var picker = document.getElementById('intro-scenario-picker');
-      if (picker) { picker.classList.remove('hidden'); picker.classList.add('anim-fadeup-2'); }
-    }, 600);
-    setTimeout(function() {
-      var journey = document.getElementById('intro-journey');
-      if (journey) { journey.classList.remove('hidden'); journey.classList.add('anim-fadeup-3'); }
-    }, 900);
   },
 
   buildScenarioPicker: function() {
-    var grid     = document.getElementById('scenario-grid');
-    var scenarios= window.HRScenarios.scenarios;
+    var grid   = document.getElementById('scenario-grid');
+    var scList = window.HRScenarios.scenarios;
     if (!grid) return;
+    var self   = this;
 
-    var self = this;
-    grid.innerHTML = scenarios.map(function(sc) {
-      return '<div class="scenario-card" data-id="' + sc.id + '" onclick="window.HRApp.selectScenario(\'' + sc.id + '\')">' +
-        '<div class="sc-tag ' + sc.tagClass + '">' + sc.tag + '</div>' +
-        '<div class="sc-icon">' + sc.icon + '</div>' +
-        '<div class="sc-name">' + sc.name + '</div>' +
-        '<div class="sc-desc">' + sc.brief.substring(0, 100) + '…</div>' +
-        '<div class="sc-meta">' +
-          '<div class="sc-meta-item">⏱ <strong>' + sc.deadline + '</strong> months</div>' +
-          '<div class="sc-meta-item">💰 <strong>₹' + (sc.budget/100000).toFixed(0) + 'L</strong> budget</div>' +
+    var tagClassMap = { URGENT:'', COMPLIANCE:'tag-scale', RESKILLING:'tag-growth', GROWTH:'tag-growth', CRISIS:'tag-crisis' };
+
+    grid.innerHTML = scList.map(function(sc) {
+      return '<div class="sc-card" data-id="' + sc.id + '" onclick="window.HRApp.selectScenario(\'' + sc.id + '\')">' +
+        '<div class="sc-card-tag ' + (tagClassMap[sc.tag] || '') + '">' + sc.tag + '</div>' +
+        '<div class="sc-card-icon">' + sc.icon + '</div>' +
+        '<div class="sc-card-name">' + sc.name + '</div>' +
+        '<div class="sc-card-sub">' + sc.brief + '</div>' +
+        '<div class="sc-card-meta">' +
+          '<span class="sc-card-meta-item">⏱ <strong>' + sc.deadline + '</strong>mo</span>' +
+          '<span class="sc-card-meta-item">💰 <strong>₹' + (sc.budget/100000).toFixed(0) + 'L</strong></span>' +
         '</div>' +
       '</div>';
     }).join('');
 
-    // Select first scenario by default
-    if (scenarios.length > 0) {
-      this.selectScenario(scenarios[0].id);
-    }
+    // Default select first
+    if (scList.length > 0) this.selectScenario(scList[0].id);
   },
 
   selectScenario: function(id) {
     this.selectedScenarioId = id;
-    var cards = document.querySelectorAll('.scenario-card');
-    cards.forEach(function(c) {
+    document.querySelectorAll('.sc-card').forEach(function(c) {
       c.classList.toggle('selected', c.getAttribute('data-id') === id);
     });
   },
 
   showJourney: function() {
     var journey = window.HREngine.getJourney();
-    var cont    = document.getElementById('journey-stats');
+    var cont    = document.getElementById('intro-journey');
     if (!cont) return;
-
     if (journey.totalRuns === 0) {
-      cont.innerHTML = '<div class="journey-stat"><div class="val">0</div><div class="lbl">Runs</div></div><div class="text-center c-muted" style="font-size:0.82rem; width:100%">Your HR journey begins here.</div>';
+      cont.innerHTML = '<span style="font-size:0.78rem; color:var(--gray-400)">Your HR journey begins here.</span>';
       return;
     }
-
     cont.innerHTML = [
-      { val: journey.totalRuns, lbl: 'Total Runs' },
-      { val: journey.bestScore, lbl: 'Best Score' },
+      { val: journey.totalRuns,   lbl: 'Runs' },
+      { val: journey.bestScore,   lbl: 'Best Score' },
       { val: journey.bestReadiness + '%', lbl: 'Best Readiness' },
-      { val: journey.scenariosCompleted.length + '/5', lbl: 'Scenarios Done' }
+      { val: journey.scenariosCompleted.length + '/5', lbl: 'Scenarios' }
     ].map(function(s) {
-      return '<div class="journey-stat"><div class="val">' + s.val + '</div><div class="lbl">' + s.lbl + '</div></div>';
+      return '<div class="j-stat"><span class="val">' + s.val + '</span><span class="lbl">' + s.lbl + '</span></div>';
     }).join('');
   },
 
   bindIntroEvents: function() {
-    if (this._bound) return;
-    this._bound = true;
     var self = this;
 
-    // Difficulty buttons
-    document.querySelectorAll('.diff-btn').forEach(function(btn) {
+    // Difficulty
+    document.querySelectorAll('.seg-btn').forEach(function(btn) {
       btn.addEventListener('click', function() {
-        document.querySelectorAll('.diff-btn').forEach(function(b) { b.classList.remove('active'); });
+        document.querySelectorAll('.seg-btn').forEach(function(b) { b.classList.remove('active'); });
         btn.classList.add('active');
         self.selectedDifficulty = btn.getAttribute('data-diff');
       });
     });
 
-    // Start button
+    // Start
     var startBtn = document.getElementById('btn-start-simulation');
     if (startBtn) startBtn.addEventListener('click', function() { self.startSimulation(); });
 
-    // Random scenario button
+    // Random
     var randBtn = document.getElementById('btn-random-scenario');
     if (randBtn) randBtn.addEventListener('click', function() {
       var ids = window.HRScenarios.scenarios.map(function(s) { return s.id; });
-      var randomId = ids[Math.floor(Math.random() * ids.length)];
-      self.selectScenario(randomId);
-      self.startSimulation();
-    });
-
-    // Skip button
-    var skipBtn = document.getElementById('btn-skip-intro');
-    if (skipBtn) skipBtn.addEventListener('click', function() {
-      if (!self.selectedScenarioId) {
-        self.selectScenario(window.HRScenarios.scenarios[0].id);
-      }
+      self.selectScenario(ids[Math.floor(Math.random() * ids.length)]);
       self.startSimulation();
     });
   },
 
   bindAppEvents: function() {
+    if (this._appBound) return;
+    this._appBound = true;
+    var self = this;
+
     // Terminal input
     var input = document.getElementById('command-input');
     if (input) {
@@ -128,56 +103,19 @@ window.HRApp = {
       });
     }
 
-    // Modal close
-    var closeBtn = document.getElementById('btn-close-modal');
-    if (closeBtn) closeBtn.addEventListener('click', function() { window.HRUI.closeModal(); });
-
-    var overlay = document.getElementById('modal-overlay');
-    if (overlay) overlay.addEventListener('click', function(e) {
-      if (e.target === overlay) window.HRUI.closeModal();
-    });
-
-    // Terminal toggle
-    var termBtn = document.getElementById('btn-toggle-terminal');
-    if (termBtn) termBtn.addEventListener('click', function() {
-      var term = document.getElementById('terminal');
-      if (!term) return;
-      term.classList.toggle('hidden');
-      termBtn.classList.toggle('active', !term.classList.contains('hidden'));
-    });
-
-    // Classroom mode
-    var classBtn = document.getElementById('btn-classroom-mode');
-    if (classBtn) classBtn.addEventListener('click', function() {
-      document.body.classList.toggle('classroom-mode');
-      classBtn.classList.toggle('active', document.body.classList.contains('classroom-mode'));
-    });
-
-    // Restart button
-    var resetBtn = document.getElementById('btn-reset');
+    // Restart button (top bar)
+    var resetBtn = document.getElementById('btn-reset-top');
     if (resetBtn) resetBtn.addEventListener('click', function() {
-      if (confirm('Restart simulation? Your current progress will be lost.')) {
-        window.HRApp.reset();
-      }
+      if (confirm('Restart simulation?')) self.reset();
     });
 
-    // Sidebar toggle for mobile
-    var sidebarToggle = document.getElementById('btn-sidebar-toggle');
-    if (sidebarToggle) sidebarToggle.addEventListener('click', function() {
-      document.getElementById('sidebar').classList.toggle('sidebar-open');
-    });
-
-    // Nav item clicks (only for completed phases)
-    document.querySelectorAll('.nav-item').forEach(function(item) {
-      item.addEventListener('click', function(e) {
-        e.preventDefault();
-        var phase = parseInt(item.getAttribute('data-phase'));
-        var s = window.HRState;
-        if (phase === s.phase || s.completedPhases.includes(phase)) {
-          window.HRUI.renderPhase(phase);
-          window.HRUI.updateNav();
-          // Close sidebar on mobile
-          document.getElementById('sidebar').classList.remove('sidebar-open');
+    // Bottom nav
+    document.querySelectorAll('.bnav-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var ph = parseInt(btn.getAttribute('data-phase'));
+        var s  = window.HRState;
+        if (ph === s.phase || s.completedPhases.indexOf(ph) !== -1) {
+          window.HREngine.advancePhase(ph);
         }
       });
     });
@@ -185,9 +123,8 @@ window.HRApp = {
 
   startSimulation: function() {
     var scenarioId = this.selectedScenarioId || window.HRScenarios.scenarios[0].id;
-    var difficulty = this.selectedDifficulty || 'manager';
+    var difficulty = this.selectedDifficulty || 'beginner';
 
-    // Init state
     window.HRState.init(scenarioId, difficulty);
     window.HREvents.reset();
 
@@ -197,59 +134,39 @@ window.HRApp = {
     document.getElementById('app-screen').classList.remove('hidden');
     document.getElementById('app-screen').classList.add('active');
 
-    // Bind app events (idempotent)
     this.bindAppEvents();
 
     // Initial render
-    window.HRUI.updateScenarioBadge();
-    window.HRUI.updateNav();
-    window.HRUI.updateKPIs();
-    window.HRUI.updateScorecard();
-    window.HRUI.updateTimeline();
+    window.HRUI.updateTopLabel();
     window.HRUI.renderPhase(1);
 
-    // Welcome terminal message
-    window.HRTerminal.print('NOVA HR COMMAND — ' + window.HRState.scenario.name, 't-success');
-    window.HRTerminal.print('Type "help" for available commands.', 't-muted');
+    // Terminal welcome
+    window.HRTerminal.print('NOVA HR — ' + window.HRState.scenario.name, 't-success');
+    window.HRTerminal.print('Type "help" for commands.', 't-muted');
   },
 
   reset: function() {
-    // Reset events
+    this._appBound = false;
     window.HREvents.reset();
 
-    // Clear terminal
     var out = document.getElementById('terminal-output');
     if (out) out.innerHTML = '';
 
-    // Switch back to intro
     document.getElementById('app-screen').classList.remove('active');
     document.getElementById('app-screen').classList.add('hidden');
     document.getElementById('intro-screen').classList.remove('hidden');
     document.getElementById('intro-screen').classList.add('active');
 
-    // Remove classroom mode
-    document.body.classList.remove('classroom-mode');
-
-    // Refresh journey stats
     this.showJourney();
   },
 
   replayDifferent: function() {
-    // Keep same scenario, reset everything else
-    var oldScenario = window.HRState.scenarioId;
-    window.HREvents.reset();
-
-    document.getElementById('app-screen').classList.remove('active');
-    document.getElementById('app-screen').classList.add('hidden');
-    document.getElementById('intro-screen').classList.remove('hidden');
-    document.getElementById('intro-screen').classList.add('active');
-
-    this.selectScenario(oldScenario);
-    this.showJourney();
+    var old = window.HRState.scenarioId;
+    this.reset();
+    this.selectScenario(old);
   }
 };
 
-// Boot
 document.addEventListener('DOMContentLoaded', function() {
   window.HRApp.init();
 });
