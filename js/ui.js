@@ -368,6 +368,9 @@ window.HRUI = {
     var hint = s.scenario && s.scenario.optimalStrategies ?
       '<div class="insight warn"><div class="insight-label">Scenario Hint</div><div class="insight-text">' + s.scenario.optimalStrategies.combination + '</div></div>' : '';
 
+    var nextBtn = s.strategyChosen ?
+      '<button class="btn-primary" onclick="window.HREngine.advancePhase(5)">Proceed to Recruitment →</button>' : '';
+
     cont.innerHTML =
       '<div class="phase-header">' +
         '<div class="ph-eyebrow">Phase 4 · HR Strategy</div>' +
@@ -377,7 +380,7 @@ window.HRUI = {
 
       '<div class="strategy-grid">' + cards + '</div>' +
 
-      hint;
+      hint + nextBtn;
   },
 
   /* ═══════════════════════════════════════════════════════
