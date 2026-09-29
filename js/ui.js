@@ -240,7 +240,7 @@ window.HRUI = {
       '</div>' : '';
 
     var actionHtml = analyzed ?
-      '<button class="btn-primary" onclick="window.HRUI.renderPhase(3)">Inspect Your Team →</button>' :
+      '<button class="btn-primary" onclick="window.HREngine.advancePhase(3)">Inspect Your Team →</button>' :
       '<button class="btn-primary" onclick="window.HREngine.analyzeWorkforce()">Run Gap Analysis</button>';
 
     cont.innerHTML =

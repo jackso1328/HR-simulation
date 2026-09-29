@@ -48,7 +48,6 @@ window.HREvents = {
     window.HRTerminal.print('   ' + ev.desc, 't-muted');
 
     window.HRUI.updateKPIs();
-    window.HRUI.updateScorecard();
   },
 
   showEventNotification: function(ev) {

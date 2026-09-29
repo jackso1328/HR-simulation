@@ -14,7 +14,7 @@ window.HRApp = {
 
   buildScenarioPicker: function() {
     var grid   = document.getElementById('scenario-grid');
-    var scList = window.HRScenarios.scenarios;
+    var scList = [window.HRScenarios.scenarios[0]];
     if (!grid) return;
     var self   = this;
 

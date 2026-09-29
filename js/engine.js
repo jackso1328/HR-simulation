@@ -152,7 +152,6 @@ window.HREngine = {
 
     window.HRTerminal.print('✓ ' + cand.name + ' hired. Cost: ₹' + hireCost.toLocaleString('en-IN'), 't-success');
     window.HRUI.updateKPIs();
-    window.HRUI.updateScorecard();
 
     return { cand: cand, hireCost: hireCost, moraleEffect: moraleEffect };
   },
@@ -193,6 +192,14 @@ window.HREngine = {
     var afterVal  = Math.min(100, beforeVal + actualGain);
     emp[skill]    = afterVal;
 
+    // Fill gap if skill reaches threshold
+    var gapMapping = { ai: 'AI Engineers', ml: 'ML Engineers', cloud: 'Data Engineers', leadership: 'Managers' };
+    var mappedRole = gapMapping[skill];
+    if (mappedRole && state.gap[mappedRole] > 0 && afterVal >= 70) {
+      state.gap[mappedRole]--;
+      state.available[mappedRole] = (state.available[mappedRole] || 0) + 1;
+    }
+
     state.trainedEmployees.push({
       empId: employeeId, empName: emp.name,
       programId: programId, programName: program.name,
@@ -207,7 +214,6 @@ window.HREngine = {
 
     window.HRTerminal.print('✓ ' + emp.name + ' completed ' + program.name + '. ' + skill + ': ' + beforeVal + ' → ' + afterVal, 't-success');
     window.HRUI.updateKPIs();
-    window.HRUI.updateScorecard();
 
     return { emp: emp, program: program, before: beforeVal, after: afterVal, gain: actualGain };
   },
