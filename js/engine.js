@@ -27,8 +27,8 @@ window.HREngine = {
 
     var impacts = {
       recruit: { morale: 0, time: -0, budgetPct: -0.15, readiness: +8 },
-      train:   { morale: +6, time: -2, budgetPct: -0.05, readiness: +4 },
-      combination: { morale: +3, time: -1, budgetPct: -0.08, readiness: +6 }
+      develop: { morale: +6, time: -2, budgetPct: -0.05, readiness: +4 },
+      combine: { morale: +3, time: -1, budgetPct: -0.08, readiness: +6 }
     };
     var impact = impacts[strategy] || {};
 
@@ -37,13 +37,13 @@ window.HREngine = {
     if (impact.time)      state.timeUsed += Math.abs(impact.time);
 
     var consequenceMap = {
-      recruit:     'Faster hiring. Higher cost. External expertise. Cultural integration risk.',
-      train:       'Lower cost. Stronger loyalty. Takes time. May not fully close skill gap.',
-      combination: 'Balanced approach. Moderate cost. Moderate time. Most flexible.'
+      recruit: 'Faster hiring. Higher cost. External expertise. Cultural integration risk.',
+      develop: 'Lower cost. Stronger loyalty. Takes time. May not fully close skill gap.',
+      combine: 'Balanced approach. Moderate cost. Moderate time. Most flexible.'
     };
     state.logDecision('HR Strategy', 'Strategy: ' + strategy.toUpperCase(), 'Morale ' + (impact.morale >= 0 ? '+' : '') + impact.morale, consequenceMap[strategy]);
 
-    this.advancePhase(4); // Go to recruitment/training setup
+    this.advancePhase(strategy === 'develop' ? 7 : 5); // Auto-advance to Recruitment (5) or Training (7)
     return impact;
   },
 
@@ -295,7 +295,7 @@ window.HREngine = {
       var avgGain2 = totalGain / state.trainedEmployees.length;
       state.scores.trainingEffectiveness = Math.min(100, Math.round(40 + (avgGain2 / 30) * 60));
     } else {
-      state.scores.trainingEffectiveness = state.strategyChosen === 'train' ? 30 : 60;
+      state.scores.trainingEffectiveness = state.strategyChosen === 'develop' ? 30 : 60;
     }
 
     // Budget Management
@@ -391,9 +391,6 @@ window.HREngine = {
     state.phase = targetPhase;
 
     window.HRUI.renderPhase(targetPhase);
-    window.HRUI.updateNav();
-    window.HRUI.updateKPIs();
-    window.HRUI.updateTimeline();
     window.HREvents.checkAndTrigger(targetPhase);
 
     // Scroll to top of main panel

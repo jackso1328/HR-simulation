@@ -329,7 +329,7 @@ window.HRUI = {
         ]
       },
       {
-        id: 'train', icon: '🎓', name: 'Develop',
+        id: 'develop', icon: '🎓', name: 'Develop',
         desc: 'Invest in your existing team to build the skills needed.',
         attrs: [
           { lbl:'Cost', val:'Low', cls:'low' },
@@ -338,7 +338,7 @@ window.HRUI = {
         ]
       },
       {
-        id: 'combination', icon: '⚖️', name: 'Combine',
+        id: 'combine', icon: '⚖️', name: 'Combine',
         desc: 'Recruit for critical roles, develop the rest internally.',
         attrs: [
           { lbl:'Cost', val:'Medium', cls:'medium' },
@@ -368,9 +368,6 @@ window.HRUI = {
     var hint = s.scenario && s.scenario.optimalStrategies ?
       '<div class="insight warn"><div class="insight-label">Scenario Hint</div><div class="insight-text">' + s.scenario.optimalStrategies.combination + '</div></div>' : '';
 
-    var nextBtn = s.strategyChosen ?
-      '<button class="btn-primary" onclick="window.HREngine.advancePhase(' + (s.strategyChosen === 'train' ? 7 : 5) + ')">Proceed to ' + (s.strategyChosen === 'train' ? 'Training' : 'Recruitment') + ' →</button>' : '';
-
     cont.innerHTML =
       '<div class="phase-header">' +
         '<div class="ph-eyebrow">Phase 4 · HR Strategy</div>' +
@@ -380,7 +377,7 @@ window.HRUI = {
 
       '<div class="strategy-grid">' + cards + '</div>' +
 
-      hint + nextBtn;
+      hint;
   },
 
   /* ═══════════════════════════════════════════════════════
