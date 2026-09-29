@@ -369,7 +369,7 @@ window.HRUI = {
       '<div class="insight warn"><div class="insight-label">Scenario Hint</div><div class="insight-text">' + s.scenario.optimalStrategies.combination + '</div></div>' : '';
 
     var nextBtn = s.strategyChosen ?
-      '<button class="btn-primary" onclick="window.HREngine.advancePhase(5)">Proceed to Recruitment →</button>' : '';
+      '<button class="btn-primary" onclick="window.HREngine.advancePhase(' + (s.strategyChosen === 'train' ? 7 : 5) + ')">Proceed to ' + (s.strategyChosen === 'train' ? 'Training' : 'Recruitment') + ' →</button>' : '';
 
     cont.innerHTML =
       '<div class="phase-header">' +
@@ -416,7 +416,8 @@ window.HRUI = {
     }).join('');
 
     var nextBtn = selected ?
-      '<button class="btn-primary" onclick="window.HREngine.advancePhase(6)">Review Candidates →</button>' : '';
+      '<button class="btn-primary" onclick="window.HREngine.advancePhase(6)">Review Candidates →</button>' : 
+      '<button class="btn-ghost" style="width:100%; margin-top:8px;" onclick="window.HREngine.advancePhase(7)">Skip Recruitment →</button>';
 
     cont.innerHTML =
       '<div class="phase-header">' +
@@ -529,7 +530,8 @@ window.HRUI = {
     }).join('');
 
     var nextBtn = s.hiredCandidates.length > 0 ?
-      '<button class="btn-primary" onclick="window.HREngine.advancePhase(7)">Proceed to Training →</button>' : '';
+      '<button class="btn-primary" onclick="window.HREngine.advancePhase(7)">Proceed to Training →</button>' : 
+      '<button class="btn-ghost" style="width:100%; margin-top:8px;" onclick="window.HREngine.advancePhase(7)">Skip Hiring →</button>';
 
     cont.innerHTML =
       '<div class="phase-header">' +
@@ -637,7 +639,9 @@ window.HRUI = {
         '<div class="insight-text"><strong>Training</strong>: current role performance. <strong>Development</strong>: future potential. Actual skill gain depends on each employee\'s learning potential.</div>' +
       '</div>' +
 
-      '<button class="btn-primary" onclick="window.HREngine.advancePhase(8)">Evaluate Training Results →</button>';
+      (s.trainedEmployees.length > 0 ?
+        '<button class="btn-primary" onclick="window.HREngine.advancePhase(8)">Evaluate Training Results →</button>' :
+        '<button class="btn-ghost" style="width:100%; margin-top:8px;" onclick="window.HREngine.advancePhase(9)">Skip Training →</button>');
 
     this.animateSkills();
   },
